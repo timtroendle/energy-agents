@@ -1,5 +1,6 @@
+package uk.ac.eeci;
+
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by daniel on 08/02/17.
@@ -15,15 +16,6 @@ public class Simulation implements ISteppable {
             tiles[i] = new Tile(100);
             tilerefs[i] = new TileReference(tiles[i]);
         }
-        Tile myTile = tiles[0];
-        TileReference myRef = new TileReference(myTile);
-
-        myTile.step();
-        myRef.step().thenAccept((result) -> {
-            // do other stuff
-        });
-
-
         Tile.join(tiles);
     }
 

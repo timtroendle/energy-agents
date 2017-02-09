@@ -1,8 +1,6 @@
-import java.util.HashMap;
-import java.util.Map;
+package uk.ac.eeci;
+
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
 
 /**
  * Created by daniel on 07/02/17.
