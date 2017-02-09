@@ -1,6 +1,5 @@
 package uk.ac.eeci;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static java.lang.Thread.sleep;
@@ -11,13 +10,10 @@ public class Main {
     public static void main(String[] args) {
         try {
             int i,p;
-            for(i=0; i<400; ++i) {
+            for(i=0; i<400; ++i) { // FIXME change to actual simulation length
                 Reference.pool.mainExecutor().submit(() -> {
                     sim.step();
                 }).get();
-                sim.printState();
-                System.out.println("");
-                System.out.println("");
             }
             sleep(200);
             Reference.pool.shutdown();

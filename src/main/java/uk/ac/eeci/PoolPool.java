@@ -3,9 +3,6 @@ package uk.ac.eeci;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/**
- * Created by daniel on 08/02/17.
- */
 public class PoolPool {
     public static ExecutorService[] poolpool;
     public static ExecutorService main;

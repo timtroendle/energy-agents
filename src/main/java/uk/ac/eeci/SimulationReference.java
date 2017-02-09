@@ -2,9 +2,6 @@ package uk.ac.eeci;
 
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Created by daniel on 08/02/17.
- */
 public class SimulationReference extends Reference<Simulation> {
     public SimulationReference(Simulation referent) {
         super(referent);
