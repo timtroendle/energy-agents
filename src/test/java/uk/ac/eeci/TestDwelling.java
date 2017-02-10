@@ -1,15 +1,18 @@
 package uk.ac.eeci;
 
-import junit.framework.TestCase;
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
-public class TestDwelling extends TestCase {
+public class TestDwelling {
 
-    public double EPSILON = 0.0001;
-    public double INITIAL_DWELLING_TEMPERATURE = 22;
-    public Dwelling dwelling;
+    private double EPSILON = 0.0001;
+    private double INITIAL_DWELLING_TEMPERATURE = 22;
+    private Dwelling dwelling;
 
+    @Before
     public void setUp() {
         double conditionedFloorArea = 100;
         this.dwelling = new Dwelling(165000 * conditionedFloorArea, 200, Double.NEGATIVE_INFINITY,
@@ -17,27 +20,32 @@ public class TestDwelling extends TestCase {
                                      conditionedFloorArea, 60 * 60);
     }
 
+    @Test
     public void testDwellingTemperatureRemainsConstantWithSameTemperature() {
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE, 21.9, 26);
         assertThat(this.dwelling.getTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }
 
+    @Test
     public void testDwellingTemperatureRisesWhenWarmerOutside() {
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE + 1, 21.9, 26);
         assertThat(this.dwelling.getTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
+    @Test
     public void testDwellingTemperatureSinksWhenColderOutside() {
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE - 1, 21.9, 26);
         assertThat(this.dwelling.getTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
+    @Test
     public void testDwellingGetsHeatedWhenBelowHeatingSetPoint() {
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE, 23, 26);
         assertThat(this.dwelling.getTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
         assertThat(this.dwelling.getTemperature(), is(lessThanOrEqualTo(23.0)));
     }
 
+    @Test
     public void testDwellingGetsCooledWhenAboveCoolingSetPoint() {
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE, 20, 21);
         assertThat(this.dwelling.getTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
