@@ -2,17 +2,53 @@ package uk.ac.eeci;
 
 import org.javatuples.Pair;
 
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class HeterogeneousMarkovChain {
+public class HeterogeneousMarkovChain<T> {
+
+    private final Map<OffsetTime, MarkovChain<T>> weekdayChain;
+    private final Map<OffsetTime, MarkovChain<T>> weekendChain;
+
+    public HeterogeneousMarkovChain(Map<OffsetTime, MarkovChain<T>> weekdayChain,
+                                    Map<OffsetTime, MarkovChain<T>> weekendChain) {
+        this.weekdayChain = weekdayChain;
+        this.weekendChain = weekendChain;
+    }
+
+    public T move(T currentState, OffsetDateTime dateTime) {
+        Map<OffsetTime, MarkovChain<T>> dayChain = null;
+        switch(dateTime.getDayOfWeek()) {
+            case MONDAY:
+            case TUESDAY:
+            case WEDNESDAY:
+            case THURSDAY:
+            case FRIDAY:
+                dayChain = this.weekdayChain;
+                break;
+            case SATURDAY:
+            case SUNDAY:
+                dayChain = this.weekendChain;
+                break;
+        }
+        T nextState = null;
+        try {
+            nextState = dayChain.get(dateTime.toOffsetTime()).move(currentState);
+        } catch (NullPointerException npe) {
+            String msg = String.format("%s is not a valid date time for this markov chain.", dateTime);
+            throw new IllegalArgumentException(msg);
+        }
+        return nextState;
+    }
 
 
     public static class MarkovChain<T> {
 
-        Map<Pair<T, T>, Double> probabilities;
-        Random randomNumberGenerator;
+        private final Map<Pair<T, T>, Double> probabilities;
+        private final Random randomNumberGenerator;
 
         public MarkovChain(Map<Pair<T, T>, Double> probabilities, long seed) {
             this.probabilities = probabilities;
