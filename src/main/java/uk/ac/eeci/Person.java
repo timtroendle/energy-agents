@@ -1,6 +1,5 @@
 package uk.ac.eeci;
 
-import java.time.Duration;
 import java.time.*;
 
 /**
@@ -19,6 +18,7 @@ public class Person {
     private final Duration timeStepSize;
     private ZonedDateTime currentTime;
     private Activity currentActivity;
+
 
     /**
      *
