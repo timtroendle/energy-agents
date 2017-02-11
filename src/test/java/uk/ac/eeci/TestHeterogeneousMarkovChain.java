@@ -14,9 +14,12 @@ import static org.hamcrest.Matchers.*;
 
 import java.util.*;
 
+import uk.ac.eeci.HeterogeneousMarkovChain.MarkovChain;
+
 @RunWith(Parameterized.class)
 public class TestHeterogeneousMarkovChain {
 
+    private final static ZoneId TIME_ZONE = ZoneId.of("Europe/Paris");
     private int NUMBER_EXECUTIONS = 1000;
     private long SEED = 24124123111L;
 
@@ -46,23 +49,23 @@ public class TestHeterogeneousMarkovChain {
         spareTimeProbabilities.put(new Pair<>(State.A, State.B), 1.0);
         spareTimeProbabilities.put(new Pair<>(State.B, State.A), 1.0);
         spareTimeProbabilities.put(new Pair<>(State.C, State.B), 1.0);
-        Map<OffsetTime, HeterogeneousMarkovChain.MarkovChain<State>> weekdayChain = new HashMap<>();
-        Map<OffsetTime, HeterogeneousMarkovChain.MarkovChain<State>> weekendChain = new HashMap<>();
+        Map<LocalTime, MarkovChain<State>> weekdayChain = new HashMap<>();
+        Map<LocalTime, MarkovChain<State>> weekendChain = new HashMap<>();
         LocalDate date = LocalDate.of(2017, 1, 1); // arbitrary date
         LocalDateTime tsp = LocalDateTime.of(date, LocalTime.MIDNIGHT);
         do {
             if (tsp.getHour() >= 9 && tsp.getHour() < 17) {
-                weekdayChain.put(tsp.toLocalTime().atOffset(ZoneOffset.UTC), new HeterogeneousMarkovChain.MarkovChain<>(workTimeProbabilities, SEED));
+                weekdayChain.put(tsp.toLocalTime(), new MarkovChain<>(workTimeProbabilities, SEED));
             } else {
-                weekdayChain.put(tsp.toLocalTime().atOffset(ZoneOffset.UTC), new HeterogeneousMarkovChain.MarkovChain<>(spareTimeProbabilities, SEED));
+                weekdayChain.put(tsp.toLocalTime(), new MarkovChain<>(spareTimeProbabilities, SEED));
             }
-            weekendChain.put(tsp.toLocalTime().atOffset(ZoneOffset.UTC), new HeterogeneousMarkovChain.MarkovChain<>(spareTimeProbabilities, SEED));
+            weekendChain.put(tsp.toLocalTime(), new MarkovChain<>(spareTimeProbabilities, SEED));
             tsp = tsp.plus(Duration.ofMinutes(10));
         } while (date.equals(tsp.toLocalDate()));
-        this.chain = new HeterogeneousMarkovChain<>(weekdayChain, weekendChain);
+        this.chain = new HeterogeneousMarkovChain<>(weekdayChain, weekendChain, ZoneOffset.UTC);
     }
 
-    private double frequency(State from, OffsetDateTime dateTime, State to) {
+    private double frequency(State from, ZonedDateTime dateTime, State to) {
         List<State> chosenStates = new ArrayList<>();
         for (int i = 0; i < NUMBER_EXECUTIONS; i++) {
             chosenStates.add(this.chain.move(from, dateTime));
@@ -71,27 +74,34 @@ public class TestHeterogeneousMarkovChain {
     }
 
     @Test
-    public void testDoesNotChangeStateDuringWorktime() {
-        double frequency = this.frequency(this.startState, OffsetDateTime.of(2017, 02, 10, 15, 20, 0, 0, ZoneOffset.UTC), this.startState);
+    public void testDoesNotChangeStateDuringWorkTime() {
+        double frequency = this.frequency(this.startState, ZonedDateTime.of(2017, 02, 10, 9, 0, 0, 0, ZoneOffset.UTC), this.startState);
         assertThat(frequency, is(equalTo(1.0)));
     }
 
     @Test
     public void testAlwaysChangeStateDuringEvenings() {
-        double frequency = this.frequency(this.startState, OffsetDateTime.of(2017, 02, 10, 18, 40, 0, 0, ZoneOffset.UTC), this.startState);
+        double frequency = this.frequency(this.startState, ZonedDateTime.of(2017, 02, 10, 18, 40, 0, 0, ZoneOffset.UTC), this.startState);
         assertThat(frequency, is(equalTo(0.0)));
     }
 
     @Test
     public void testAlwaysChangeStateDuringWeekend() {
-        double frequency = this.frequency(this.startState, OffsetDateTime.of(2017, 02, 11, 15, 20, 0, 0, ZoneOffset.UTC), this.startState);
+        double frequency = this.frequency(this.startState, ZonedDateTime.of(2017, 02, 11, 15, 20, 0, 0, ZoneOffset.UTC), this.startState);
         assertThat(frequency, is(equalTo(0.0)));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testFailsWithInvalidTimeStamp() {
         // time stamps must be full 10 minute
-        OffsetDateTime invalid = OffsetDateTime.of(2017, 02, 10, 15, 21, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime invalid = ZonedDateTime.of(2017, 02, 10, 15, 21, 0, 0, ZoneOffset.UTC);
         this.chain.move(startState, invalid);
+    }
+
+    @Test
+    public void testRespectsTimeZone() {
+        ZonedDateTime beforeWork = ZonedDateTime.of(2017, 02, 10, 9, 0, 0, 0, ZoneId.of("Europe/Paris"));
+        double frequency = this.frequency(this.startState, beforeWork, this.startState);
+        assertThat(frequency, is(equalTo(0.0)));
     }
 }

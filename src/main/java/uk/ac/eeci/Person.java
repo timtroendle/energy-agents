@@ -1,7 +1,7 @@
 package uk.ac.eeci;
 
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.*;
 
 /**
  * The model of a citizen making choices on activities and locations.
@@ -17,7 +17,7 @@ public class Person {
 
     private final HeterogeneousMarkovChain<Activity> markovChain;
     private final Duration timeStepSize;
-    private OffsetDateTime currentTime;
+    private ZonedDateTime currentTime;
     private Activity currentActivity;
 
     /**
@@ -29,7 +29,7 @@ public class Person {
      *                     of the markov chain.
      */
     public Person(HeterogeneousMarkovChain<Activity> markovChain, Activity initialActivity,
-                  OffsetDateTime initialDateTime, Duration timeStepSize) {
+                  ZonedDateTime initialDateTime, Duration timeStepSize) {
         this.markovChain = markovChain;
         this.currentActivity = initialActivity;
         this.currentTime = initialDateTime;

@@ -14,7 +14,7 @@ public class TestPerson {
 
     private static final Duration TIME_STEP_SIZE = Duration.ofMinutes(10);
     private static final Activity INITIAL_ACTIVITY = Activity.HOME;
-    private static final OffsetDateTime INITIAL_DATETIME = OffsetDateTime.of(2017, 02, 11, 16, 20, 0, 0, ZoneOffset.UTC);
+    private static final ZonedDateTime INITIAL_DATETIME = ZonedDateTime.of(2017, 02, 11, 16, 20, 0, 0, ZoneOffset.UTC);
     private HeterogeneousMarkovChain<Activity> markovChain = mock(HeterogeneousMarkovChain.class);
     private Person person;
 

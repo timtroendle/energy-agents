@@ -2,25 +2,27 @@ package uk.ac.eeci;
 
 import org.javatuples.Pair;
 
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
+import java.time.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class HeterogeneousMarkovChain<T> {
 
-    private final Map<OffsetTime, MarkovChain<T>> weekdayChain;
-    private final Map<OffsetTime, MarkovChain<T>> weekendChain;
+    private final Map<LocalTime, MarkovChain<T>> weekdayChain;
+    private final Map<LocalTime, MarkovChain<T>> weekendChain;
+    private final ZoneId timeZone;
 
-    public HeterogeneousMarkovChain(Map<OffsetTime, MarkovChain<T>> weekdayChain,
-                                    Map<OffsetTime, MarkovChain<T>> weekendChain) {
+    public HeterogeneousMarkovChain(Map<LocalTime, MarkovChain<T>> weekdayChain,
+                                    Map<LocalTime, MarkovChain<T>> weekendChain,
+                                    ZoneId timeZone) {
         this.weekdayChain = weekdayChain;
         this.weekendChain = weekendChain;
+        this.timeZone = timeZone;
     }
 
-    public T move(T currentState, OffsetDateTime dateTime) {
-        Map<OffsetTime, MarkovChain<T>> dayChain = null;
+    public T move(T currentState, ZonedDateTime dateTime) {
+        Map<LocalTime, MarkovChain<T>> dayChain = null;
         switch(dateTime.getDayOfWeek()) {
             case MONDAY:
             case TUESDAY:
@@ -36,7 +38,7 @@ public class HeterogeneousMarkovChain<T> {
         }
         T nextState = null;
         try {
-            nextState = dayChain.get(dateTime.toOffsetTime()).move(currentState);
+            nextState = dayChain.get(dateTime.withZoneSameInstant(this.timeZone).toLocalTime()).move(currentState);
         } catch (NullPointerException npe) {
             String msg = String.format("%s is not a valid date time for this markov chain.", dateTime);
             throw new IllegalArgumentException(msg);
