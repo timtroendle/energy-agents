@@ -14,7 +14,7 @@ import static uk.ac.eeci.Person.Activity.NOT_AT_HOME;
 
 public class TestMarkovFromCSV {
 
-    private final static int NUMBER_EXECUTIONS = 1000;
+    private final static int NUMBER_EXECUTIONS = 2000; // FIXME the seed mechanism doesnt work as expected
     private final static long SEED = 123456789L;
     private final static ZoneId TIME_ZONE = ZoneId.of("Europe/London");
     private final static Duration TIME_STEP_SIZE = Duration.ofMinutes(10);

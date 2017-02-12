@@ -5,42 +5,53 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TestFullyDampedDwelling {
 
     private double EPSILON = 0.0001;
     private double INITIAL_DWELLING_TEMPERATURE = 22;
     private Dwelling dwelling;
+    private HeatingControlStrategy controlStrategy = mock(HeatingControlStrategy.class);
 
     @Before
     public void setUp() {
         double conditionedFloorArea = 1;
         this.dwelling = new Dwelling(3600 * conditionedFloorArea, 0, -1,
                 +1, INITIAL_DWELLING_TEMPERATURE,
-                conditionedFloorArea, 60 * 60);
+                conditionedFloorArea, 60 * 60, this.controlStrategy);
     }
 
     @Test
     public void testDwellingGetsHeatedWithMaxPowerWhenTooCold() {
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE, 23, 26);
+        when(this.controlStrategy.heatingSetPoint()).thenReturn(23.0);
+        when(this.controlStrategy.coolingSetPoint()).thenReturn(26.0);
+        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
         assertThat(this.dwelling.getTemperature(), is(closeTo(23, EPSILON)));
     }
 
     @Test
     public void testDwellingDoesNotExceedMaxHeatingPower() {
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE, 24, 26);
+        when(this.controlStrategy.heatingSetPoint()).thenReturn(24.0);
+        when(this.controlStrategy.coolingSetPoint()).thenReturn(26.0);
+        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
         assertThat(this.dwelling.getTemperature(), is(closeTo(23, EPSILON)));
     }
 
     @Test
     public void testDwellingGetsCooledWithMaxPowerWhenTooWarm() {
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE, 18, 21);
+        when(this.controlStrategy.heatingSetPoint()).thenReturn(18.0);
+        when(this.controlStrategy.coolingSetPoint()).thenReturn(21.0);
+        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
         assertThat(this.dwelling.getTemperature(), is(closeTo(21, EPSILON)));
     }
 
     @Test
     public void testDwellingDoesNotExceedMaxCoolingPower() {
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE, 18, 20);
+        when(this.controlStrategy.heatingSetPoint()).thenReturn(18.0);
+        when(this.controlStrategy.coolingSetPoint()).thenReturn(20.0);
+        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
         assertThat(this.dwelling.getTemperature(), is(closeTo(21, EPSILON)));
     }
 

@@ -10,6 +10,7 @@ public class Dwelling {
     private final double maximumCoolingPower;
     private final double maximumHeatingPower;
     private final double conditionedFloorArea;
+    private final HeatingControlStrategy heatingControlStrategy;
     private final int timeStepSize;
 
     /**
@@ -25,11 +26,13 @@ public class Dwelling {
      * @param maximumHeatingPower [W] (>= 0)
      * @param initialDwellingTemperature dwelling temperature at start time [℃]
      * @param conditionedFloorArea [m**2]
+     * @param controlStrategy the heating control strategy applied in this dwelling
      * @param timeStepSize [s]
      */
     public Dwelling(double heatMassCapacity, double heatTransmission, double maximumCoolingPower,
                     double maximumHeatingPower, double initialDwellingTemperature,
-                    double conditionedFloorArea, int timeStepSize) {
+                    double conditionedFloorArea, int timeStepSize,
+                    HeatingControlStrategy controlStrategy) {
         assert maximumCoolingPower <= 0;
         assert maximumHeatingPower >= 0;
         this.currentTemperature = initialDwellingTemperature;
@@ -38,6 +41,7 @@ public class Dwelling {
         this.maximumCoolingPower = maximumCoolingPower;
         this.maximumHeatingPower = maximumHeatingPower;
         this.conditionedFloorArea = conditionedFloorArea;
+        this.heatingControlStrategy = controlStrategy;
         this.timeStepSize = timeStepSize;
     }
 
@@ -45,10 +49,10 @@ public class Dwelling {
      * Performs dwelling simulation for the next time step.
      *
      * @param outsideTemperature [℃]
-     * @param heatingSetPoint heating setpoint of the HVAC system [℃]
-     * @param coolingSetPoint cooling setpoint of the HVAC system [℃]
      */
-    public void step(double outsideTemperature, double heatingSetPoint, double coolingSetPoint) {
+    public void step(double outsideTemperature) {
+        double heatingSetPoint = this.heatingControlStrategy.heatingSetPoint();
+        double coolingSetPoint = this.heatingControlStrategy.coolingSetPoint();
         Function<Double, Double> nextTemperature = thermalPower ->
                 this.nextTemperature(outsideTemperature, thermalPower);
         double nextTemperatureNoPower = nextTemperature.apply(0.0);
