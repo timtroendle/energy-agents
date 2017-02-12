@@ -7,6 +7,7 @@ import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.any;
 
 public class TestFullyDampedDwelling {
 
@@ -25,32 +26,32 @@ public class TestFullyDampedDwelling {
 
     @Test
     public void testDwellingGetsHeatedWithMaxPowerWhenTooCold() {
-        when(this.controlStrategy.heatingSetPoint()).thenReturn(23.0);
-        when(this.controlStrategy.coolingSetPoint()).thenReturn(26.0);
+        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(23.0);
+        when(this.controlStrategy.coolingSetPoint(any())).thenReturn(26.0);
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
         assertThat(this.dwelling.getTemperature(), is(closeTo(23, EPSILON)));
     }
 
     @Test
     public void testDwellingDoesNotExceedMaxHeatingPower() {
-        when(this.controlStrategy.heatingSetPoint()).thenReturn(24.0);
-        when(this.controlStrategy.coolingSetPoint()).thenReturn(26.0);
+        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(24.0);
+        when(this.controlStrategy.coolingSetPoint(any())).thenReturn(26.0);
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
         assertThat(this.dwelling.getTemperature(), is(closeTo(23, EPSILON)));
     }
 
     @Test
     public void testDwellingGetsCooledWithMaxPowerWhenTooWarm() {
-        when(this.controlStrategy.heatingSetPoint()).thenReturn(18.0);
-        when(this.controlStrategy.coolingSetPoint()).thenReturn(21.0);
+        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(18.0);
+        when(this.controlStrategy.coolingSetPoint(any())).thenReturn(21.0);
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
         assertThat(this.dwelling.getTemperature(), is(closeTo(21, EPSILON)));
     }
 
     @Test
     public void testDwellingDoesNotExceedMaxCoolingPower() {
-        when(this.controlStrategy.heatingSetPoint()).thenReturn(18.0);
-        when(this.controlStrategy.coolingSetPoint()).thenReturn(20.0);
+        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(18.0);
+        when(this.controlStrategy.coolingSetPoint(any())).thenReturn(20.0);
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
         assertThat(this.dwelling.getTemperature(), is(closeTo(21, EPSILON)));
     }

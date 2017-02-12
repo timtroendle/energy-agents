@@ -1,5 +1,7 @@
 package uk.ac.eeci;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 
 public class Dwelling {
@@ -11,6 +13,7 @@ public class Dwelling {
     private final double maximumHeatingPower;
     private final double conditionedFloorArea;
     private final HeatingControlStrategy heatingControlStrategy;
+    private final List<PersonReference> peopleInDwelling;
     private final int timeStepSize;
 
     /**
@@ -43,6 +46,7 @@ public class Dwelling {
         this.conditionedFloorArea = conditionedFloorArea;
         this.heatingControlStrategy = controlStrategy;
         this.timeStepSize = timeStepSize;
+        this.peopleInDwelling = new ArrayList<>();
     }
 
     /**
@@ -51,8 +55,8 @@ public class Dwelling {
      * @param outsideTemperature [℃]
      */
     public void step(double outsideTemperature) {
-        double heatingSetPoint = this.heatingControlStrategy.heatingSetPoint();
-        double coolingSetPoint = this.heatingControlStrategy.coolingSetPoint();
+        double heatingSetPoint = this.heatingControlStrategy.heatingSetPoint(this.peopleInDwelling);
+        double coolingSetPoint = this.heatingControlStrategy.coolingSetPoint(this.peopleInDwelling);
         Function<Double, Double> nextTemperature = thermalPower ->
                 this.nextTemperature(outsideTemperature, thermalPower);
         double nextTemperatureNoPower = nextTemperature.apply(0.0);
@@ -88,6 +92,14 @@ public class Dwelling {
 
     public double getTemperature() {
         return this.currentTemperature;
+    }
+
+    public void enter(PersonReference person) {
+        this.peopleInDwelling.add(person);
+    }
+
+    public void leave(PersonReference person) {
+        this.peopleInDwelling.remove(person);
     }
 
     private double nextTemperature(double outsideTemperature, double thermalPower) {
