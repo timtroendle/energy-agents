@@ -1,10 +1,10 @@
 package uk.ac.eeci;
 
-import java.util.List;
+import java.util.Set;
 
 public interface HeatingControlStrategy {
 
-    double heatingSetPoint(List<PersonReference> peopleInDwelling);
+    double heatingSetPoint(Set<PersonReference> peopleInDwelling);
 
-    double coolingSetPoint(List<PersonReference> peopleInDwelling);
+    double coolingSetPoint(Set<PersonReference> peopleInDwelling);
 }

@@ -1,7 +1,7 @@
 package uk.ac.eeci;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 
 public class Dwelling {
@@ -13,7 +13,7 @@ public class Dwelling {
     private final double maximumHeatingPower;
     private final double conditionedFloorArea;
     private final HeatingControlStrategy heatingControlStrategy;
-    private final List<PersonReference> peopleInDwelling;
+    private final Set<PersonReference> peopleInDwelling;
     private final int timeStepSize;
 
     /**
@@ -46,7 +46,7 @@ public class Dwelling {
         this.conditionedFloorArea = conditionedFloorArea;
         this.heatingControlStrategy = controlStrategy;
         this.timeStepSize = timeStepSize;
-        this.peopleInDwelling = new ArrayList<>();
+        this.peopleInDwelling = new HashSet<>();
     }
 
     /**

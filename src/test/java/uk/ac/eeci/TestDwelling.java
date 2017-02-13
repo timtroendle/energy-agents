@@ -3,9 +3,7 @@ package uk.ac.eeci;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
@@ -22,12 +20,12 @@ public class TestDwelling {
     private Dwelling dwelling;
     private HeatingControlStrategy controlStrategy = mock(HeatingControlStrategy.class);
     private PersonReference person = mock(PersonReference.class);
-    private List<PersonReference> personInList;
+    private Set<PersonReference> personInSet;
 
     @Before
     public void setUp() {
-        this.personInList = new LinkedList<>();
-        this.personInList.add(this.person);
+        this.personInSet = new HashSet<>();
+        this.personInSet.add(this.person);
         when(this.controlStrategy.heatingSetPoint(any())).thenReturn(21.9);
         when(this.controlStrategy.coolingSetPoint(any())).thenReturn(26.0);
         double conditionedFloorArea = 100;
@@ -47,15 +45,15 @@ public class TestDwelling {
     public void testWhenPersonEntersDwellingItIsHandedOverToControlStrategy() {
         this.dwelling.enter(this.person);
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
-        verify(this.controlStrategy, atLeastOnce()).coolingSetPoint(this.personInList);
-        verify(this.controlStrategy, atLeastOnce()).heatingSetPoint(this.personInList);
+        verify(this.controlStrategy, atLeastOnce()).coolingSetPoint(this.personInSet);
+        verify(this.controlStrategy, atLeastOnce()).heatingSetPoint(this.personInSet);
     }
 
     @Test
     public void testDwellingIsEmptyAtStartup() {
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
-        verify(this.controlStrategy, atLeastOnce()).coolingSetPoint(new ArrayList<>());
-        verify(this.controlStrategy, atLeastOnce()).heatingSetPoint(new ArrayList<>());
+        verify(this.controlStrategy, atLeastOnce()).coolingSetPoint(new HashSet<>());
+        verify(this.controlStrategy, atLeastOnce()).heatingSetPoint(new HashSet<>());
     }
 
     @Test
@@ -63,8 +61,8 @@ public class TestDwelling {
         this.dwelling.enter(this.person);
         this.dwelling.leave(this.person);
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
-        verify(this.controlStrategy, atLeastOnce()).coolingSetPoint(new ArrayList<>());
-        verify(this.controlStrategy, atLeastOnce()).heatingSetPoint(new ArrayList<>());
+        verify(this.controlStrategy, atLeastOnce()).coolingSetPoint(new HashSet<>());
+        verify(this.controlStrategy, atLeastOnce()).heatingSetPoint(new HashSet<>());
     }
 
     @Test
