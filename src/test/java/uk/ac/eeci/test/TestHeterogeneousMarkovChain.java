@@ -1,4 +1,4 @@
-package uk.ac.eeci;
+package uk.ac.eeci.test;
 
 import org.javatuples.Pair;
 import org.junit.Before;
@@ -14,12 +14,12 @@ import static org.hamcrest.Matchers.*;
 
 import java.util.*;
 
+import uk.ac.eeci.HeterogeneousMarkovChain;
 import uk.ac.eeci.HeterogeneousMarkovChain.MarkovChain;
 
 @RunWith(Parameterized.class)
 public class TestHeterogeneousMarkovChain {
 
-    private final static ZoneId TIME_ZONE = ZoneId.of("Europe/Paris");
     private int NUMBER_EXECUTIONS = 1000;
     private long SEED = 24124123111L;
 
@@ -75,32 +75,32 @@ public class TestHeterogeneousMarkovChain {
 
     @Test
     public void testDoesNotChangeStateDuringWorkTime() {
-        double frequency = this.frequency(this.startState, ZonedDateTime.of(2017, 02, 10, 9, 0, 0, 0, ZoneOffset.UTC), this.startState);
+        double frequency = this.frequency(this.startState, ZonedDateTime.of(2017, 2, 10, 9, 0, 0, 0, ZoneOffset.UTC), this.startState);
         assertThat(frequency, is(equalTo(1.0)));
     }
 
     @Test
     public void testAlwaysChangeStateDuringEvenings() {
-        double frequency = this.frequency(this.startState, ZonedDateTime.of(2017, 02, 10, 18, 40, 0, 0, ZoneOffset.UTC), this.startState);
+        double frequency = this.frequency(this.startState, ZonedDateTime.of(2017, 2, 10, 18, 40, 0, 0, ZoneOffset.UTC), this.startState);
         assertThat(frequency, is(equalTo(0.0)));
     }
 
     @Test
     public void testAlwaysChangeStateDuringWeekend() {
-        double frequency = this.frequency(this.startState, ZonedDateTime.of(2017, 02, 11, 15, 20, 0, 0, ZoneOffset.UTC), this.startState);
+        double frequency = this.frequency(this.startState, ZonedDateTime.of(2017, 2, 11, 15, 20, 0, 0, ZoneOffset.UTC), this.startState);
         assertThat(frequency, is(equalTo(0.0)));
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void testFailsWithInvalidTimeStamp() {
         // time stamps must be full 10 minute
-        ZonedDateTime invalid = ZonedDateTime.of(2017, 02, 10, 15, 21, 0, 0, ZoneOffset.UTC);
+        ZonedDateTime invalid = ZonedDateTime.of(2017, 2, 10, 15, 21, 0, 0, ZoneOffset.UTC);
         this.chain.move(startState, invalid);
     }
 
     @Test
     public void testRespectsTimeZone() {
-        ZonedDateTime beforeWork = ZonedDateTime.of(2017, 02, 10, 9, 0, 0, 0, ZoneId.of("Europe/Paris"));
+        ZonedDateTime beforeWork = ZonedDateTime.of(2017, 2, 10, 9, 0, 0, 0, ZoneId.of("Europe/Paris"));
         double frequency = this.frequency(this.startState, beforeWork, this.startState);
         assertThat(frequency, is(equalTo(0.0)));
     }

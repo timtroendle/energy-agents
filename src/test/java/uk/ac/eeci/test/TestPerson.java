@@ -1,4 +1,4 @@
-package uk.ac.eeci;
+package uk.ac.eeci.test;
 
 import org.junit.Before;
 
@@ -8,7 +8,11 @@ import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 
 import org.junit.Test;
+import uk.ac.eeci.DwellingReference;
+import uk.ac.eeci.HeterogeneousMarkovChain;
+import uk.ac.eeci.Person;
 import uk.ac.eeci.Person.Activity;
+import uk.ac.eeci.PersonReference;
 
 public class TestPerson {
 

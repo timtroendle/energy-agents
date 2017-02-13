@@ -1,4 +1,4 @@
-package uk.ac.eeci.strategy;
+package uk.ac.eeci.test.strategy;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -7,6 +7,8 @@ import org.junit.runners.Parameterized;
 import uk.ac.eeci.HeatingControlStrategy;
 import uk.ac.eeci.PersonReference;
 import uk.ac.eeci.Person.Activity;
+import uk.ac.eeci.strategy.ClimateChangingControlStrategy;
+
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 

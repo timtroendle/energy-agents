@@ -1,7 +1,10 @@
-package uk.ac.eeci;
+package uk.ac.eeci.test;
 
 import org.junit.Before;
 import org.junit.Test;
+import uk.ac.eeci.HeterogeneousMarkovChain;
+import uk.ac.eeci.MarkovChainReader;
+import uk.ac.eeci.Person;
 
 import java.io.*;
 import java.time.*;

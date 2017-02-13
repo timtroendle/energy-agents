@@ -1,7 +1,9 @@
-package uk.ac.eeci;
+package uk.ac.eeci.test;
 
 import org.junit.Before;
 import org.junit.Test;
+import uk.ac.eeci.Dwelling;
+import uk.ac.eeci.HeatingControlStrategy;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
