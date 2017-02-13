@@ -1,6 +1,8 @@
 package uk.ac.eeci;
 
 import java.time.*;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * The model of a citizen making choices on activities and locations.
@@ -14,10 +16,21 @@ public class Person {
         HOME, SLEEP_AT_HOME, OTHER_HOME, SLEEP_AT_OTHER_HOME, NOT_AT_HOME;
     }
 
+    private final static Set<Activity> HOME_ACTIVITIES;
+
+    static {
+        HOME_ACTIVITIES = new HashSet<>();
+        HOME_ACTIVITIES.add(Activity.HOME);
+        HOME_ACTIVITIES.add(Activity.SLEEP_AT_HOME);
+    }
+
     private final HeterogeneousMarkovChain<Activity> markovChain;
     private final Duration timeStepSize;
+    private final PersonReference reference;
+    private final DwellingReference home;
     private ZonedDateTime currentTime;
     private Activity currentActivity;
+    private boolean atHome;
 
 
     /**
@@ -27,13 +40,20 @@ public class Person {
      * @param initialDateTime The date time at startup.
      * @param timeStepSize The time step size for the simulation. Must be consistent with the time step size
      *                     of the markov chain.
+     * @param reference A {@link PersonReference} to itself.
+     * @param home A {@link DwellingReference} to this person's home.
      */
     public Person(HeterogeneousMarkovChain<Activity> markovChain, Activity initialActivity,
-                  ZonedDateTime initialDateTime, Duration timeStepSize) {
+                  ZonedDateTime initialDateTime, Duration timeStepSize, PersonReference reference,
+                  DwellingReference home) {
         this.markovChain = markovChain;
         this.currentActivity = initialActivity;
         this.currentTime = initialDateTime;
         this.timeStepSize = timeStepSize;
+        this.reference = reference;
+        this.home = home;
+        this.atHome = false;
+        this.updateLocation();
     }
 
     /**
@@ -44,11 +64,23 @@ public class Person {
      */
     public void step() {
         this.currentActivity = this.markovChain.move(this.currentActivity, this.currentTime);
+        this.updateLocation();
         this.currentTime = this.currentTime.plus(this.timeStepSize);
     }
 
     public Activity getCurrentActivity() {
         return this.currentActivity;
+    }
+
+    private void updateLocation() {
+        if (this.atHome && !HOME_ACTIVITIES.contains(this.currentActivity)) {
+            this.atHome = false;
+            this.home.leave(this.reference);
+        } else if (!this.atHome && HOME_ACTIVITIES.contains(this.currentActivity)) {
+            this.atHome = true;
+            this.home.enter(this.reference);
+        }
+
     }
 
 }
