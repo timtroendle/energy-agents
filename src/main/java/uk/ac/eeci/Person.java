@@ -26,7 +26,7 @@ public class Person {
 
     private final HeterogeneousMarkovChain<Activity> markovChain;
     private final Duration timeStepSize;
-    private final PersonReference reference;
+    private PersonReference reference;
     private final DwellingReference home;
     private ZonedDateTime currentTime;
     private Activity currentActivity;
@@ -70,6 +70,10 @@ public class Person {
 
     public Activity getCurrentActivity() {
         return this.currentActivity;
+    }
+
+    public void setPersonReference(PersonReference reference) {
+        this.reference = reference; // FIXME ugly as fuck, don't do that.
     }
 
     private void updateLocation() {

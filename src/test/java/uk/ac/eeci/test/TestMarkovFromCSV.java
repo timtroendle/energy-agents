@@ -17,6 +17,7 @@ import static uk.ac.eeci.Person.Activity.NOT_AT_HOME;
 
 public class TestMarkovFromCSV {
 
+    private final static String CSV_FILE_NAME = "test-markov-chain.csv";
     private final static int NUMBER_EXECUTIONS = 2000; // FIXME the seed mechanism doesnt work as expected
     private final static long SEED = 123456789L;
     private final static ZoneId TIME_ZONE = ZoneId.of("Europe/London");
@@ -28,7 +29,7 @@ public class TestMarkovFromCSV {
     @Before
     public void setUp() throws IOException {
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-        InputStream is = classloader.getResourceAsStream("test-markov-chain.csv");
+        InputStream is = classloader.getResourceAsStream(CSV_FILE_NAME);
         Reader in = new InputStreamReader(is);
         this.markovChain = MarkovChainReader.readMarkovChainFromFile(in, TIME_STEP_SIZE, SEED, TIME_ZONE);
     }
