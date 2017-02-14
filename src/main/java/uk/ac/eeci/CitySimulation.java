@@ -1,16 +1,18 @@
 package uk.ac.eeci;
 
-import io.improbable.science.ISteppable;
+import io.improbable.scienceos.EndSimulationException;
+import io.improbable.scienceos.ISimulation;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Defines an entire simulation run.
  */
-public class CitySimulation implements ISteppable {
+public class CitySimulation implements ISimulation {
 
     private final Set<DwellingReference> dwellings;
     private final Set<PersonReference> people;
@@ -28,7 +30,7 @@ public class CitySimulation implements ISteppable {
     }
 
     @Override
-    public CompletableFuture<Void> step() {
+    public void step() throws ExecutionException, InterruptedException, EndSimulationException {
         List<CompletableFuture<Void>> peopleSteps = new ArrayList<>();
         for (PersonReference person : this.people) {
             peopleSteps.add(person.step());
@@ -36,14 +38,19 @@ public class CitySimulation implements ISteppable {
         CompletableFuture<Void>[] array = new CompletableFuture[peopleSteps.size()];
         array = peopleSteps.toArray(array);
 
-        return CompletableFuture.allOf(array).thenCompose((unused) -> {
-            List<CompletableFuture<Void>> dwellingSteps = new ArrayList<>();
-            for (DwellingReference dwelling : this.dwellings) {
-                dwellingSteps.add(dwelling.step(this.outdoorTemperature));
-            }
-            CompletableFuture<Void>[] dStepsArray = new CompletableFuture[dwellingSteps.size()];
-            dStepsArray = dwellingSteps.toArray(dStepsArray);
-            return CompletableFuture.allOf(dStepsArray);
-        });
+        CompletableFuture.allOf(array).get();
+
+        List<CompletableFuture<Void>> dwellingSteps = new ArrayList<>();
+        for (DwellingReference dwelling : this.dwellings) {
+            dwellingSteps.add(dwelling.step(this.outdoorTemperature));
+        }
+        CompletableFuture<Void>[] dStepsArray = new CompletableFuture[dwellingSteps.size()];
+        dStepsArray = dwellingSteps.toArray(dStepsArray);
+        CompletableFuture.allOf(dStepsArray).get();
+    }
+
+    @Override
+    public void stop() {
+        // nothing to do
     }
 }

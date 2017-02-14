@@ -1,6 +1,6 @@
 package uk.ac.eeci.test.integration;
 
-import io.improbable.science.Conductor;
+import io.improbable.scienceos.Conductor;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
