@@ -46,13 +46,11 @@ public class TestUnheatedBuildings {
                 .map(dwelling -> new DwellingReference(dwelling))
                 .collect(Collectors.toList());
         this.peopleReferences = this.createPeopleReferences(this.dwellingReferences);
-        DwellingSetReference dwellingSetReference = new DwellingSetReference(new DwellingSet(this.dwellingReferences));
-        DataLoggerReference dataLoggerReference = new DataLoggerReference(new DataLogger(dwellingSetReference));
 
-        this.conductor = new Conductor(new CitySimulation(dwellingSetReference,
+        this.conductor = new Conductor(new CitySimulation(this.dwellingReferences,
                                                           new HashSet<>(this.peopleReferences),
                                                           CONSTANT_OUTDOOR_TEMPERATURE,
-                                                          dataLoggerReference) {
+                                                          Collections.EMPTY_LIST) {
         });
     }
 

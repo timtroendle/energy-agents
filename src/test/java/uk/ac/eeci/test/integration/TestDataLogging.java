@@ -7,11 +7,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import uk.ac.eeci.*;
+import uk.ac.eeci.Person.Activity;
 
 import java.io.IOException;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -26,7 +24,6 @@ import static org.mockito.Mockito.when;
 public class TestDataLogging {
 
     private final static int NUMBER_STEPS = 5;
-    private final static ZoneId TIME_ZONE = ZoneOffset.UTC;
     private final static double CONSTANT_OUTDOOR_TEMPERATURE = 24.0;
     private Conductor conductor;
     private Dwelling dwelling1 = mock(Dwelling.class);
@@ -34,16 +31,17 @@ public class TestDataLogging {
     private Person person1 = mock(Person.class);
     private Person person2 = mock(Person.class);
     private Person person3 = mock(Person.class);
-    private DataLogger dataLogger;
+    private DataPoint<DwellingReference, Double> temperatureDataPoint;
+    private DataPoint<PersonReference, Person.Activity> activityDataPoint;
 
 
     private static class ShortSimulation extends CitySimulation {
 
         private int remainingSteps;
 
-        public ShortSimulation(DwellingSetReference dwellings, Set<PersonReference> people,
-                               DataLoggerReference dataLogger, double outdoorTemperature, int numberSteps) {
-            super(dwellings, people, outdoorTemperature, dataLogger);
+        public ShortSimulation(Collection<DwellingReference> dwellings, Collection<PersonReference> people,
+                               Collection<DataPointReference> dataPoints, double outdoorTemperature, int numberSteps) {
+            super(dwellings, people, outdoorTemperature, dataPoints);
             this.remainingSteps = numberSteps;
         }
 
@@ -67,13 +65,20 @@ public class TestDataLogging {
         List<PersonReference> peopleReferences = Stream.of(this.person1, this.person2, this.person3)
                 .map(PersonReference::new)
                 .collect(Collectors.toList());
-        DwellingSet dwellings = new DwellingSet(dwellingReferences);
-        DwellingSetReference dwellingSetReference = new DwellingSetReference(dwellings);
-        this.dataLogger = new DataLogger(dwellingSetReference);
-        DataLoggerReference dataLoggerReference = new DataLoggerReference(this.dataLogger);
+        this.temperatureDataPoint =  new DataPoint<>(
+                dwellingReferences,
+                (DwellingReference::getTemperature)
+        );
+        this.activityDataPoint = new DataPoint<>(
+                peopleReferences,
+                (PersonReference::getCurrentActivity)
+        );
 
-        this.conductor = new Conductor(new ShortSimulation(dwellingSetReference,
-                new HashSet<>(peopleReferences), dataLoggerReference,
+        this.conductor = new Conductor(new ShortSimulation(dwellingReferences,
+                new HashSet<>(peopleReferences),
+                Stream.of(this.temperatureDataPoint, this.activityDataPoint)
+                        .map(DataPointReference::new)
+                        .collect(Collectors.toList()),
                 CONSTANT_OUTDOOR_TEMPERATURE,
                 NUMBER_STEPS) {
         });
@@ -85,16 +90,31 @@ public class TestDataLogging {
     }
 
     private void initPeople() {
-        when(this.person1.getCurrentActivity()).thenReturn(Person.Activity.HOME);
-        when(this.person2.getCurrentActivity()).thenReturn(Person.Activity.NOT_AT_HOME);
-        when(this.person3.getCurrentActivity()).thenReturn(Person.Activity.SLEEP_AT_HOME);
+        when(this.person1.getCurrentActivity()).thenReturn(Activity.HOME);
+        when(this.person2.getCurrentActivity()).thenReturn(Activity.NOT_AT_HOME);
+        when(this.person3.getCurrentActivity()).thenReturn(Activity.SLEEP_AT_HOME);
     }
 
     @Test
     public void testLogsDwellingTemperature() {
         this.conductor.run();
-        Map<DwellingReference, List<Double>> temperatures = this.dataLogger.getTemperatureRecord();
+        Map<DwellingReference, List<Double>> temperatures = this.temperatureDataPoint.getRecord();
+        for (List<Double> dwellingTimeSeries : temperatures.values()) {
+            assertThat(dwellingTimeSeries, hasSize(NUMBER_STEPS));
+        }
         assertThat(temperatures.get(new DwellingReference(this.dwelling1)), (Every.everyItem(is(equalTo(20.0)))));
         assertThat(temperatures.get(new DwellingReference(this.dwelling2)), (Every.everyItem(is(equalTo(30.0)))));
+    }
+
+    @Test
+    public void testLogsPeopleActivity() {
+        this.conductor.run();
+        Map<PersonReference, List<Activity>> activities = this.activityDataPoint.getRecord();
+        for (List<Activity> personTimeSeries : activities.values()) {
+            assertThat(personTimeSeries, hasSize(NUMBER_STEPS));
+        }
+        assertThat(activities.get(new PersonReference(this.person1)), (Every.everyItem(is(equalTo(Activity.HOME)))));
+        assertThat(activities.get(new PersonReference(this.person2)), (Every.everyItem(is(equalTo(Activity.NOT_AT_HOME)))));
+        assertThat(activities.get(new PersonReference(this.person3)), (Every.everyItem(is(equalTo(Activity.SLEEP_AT_HOME)))));
     }
 }
