@@ -19,6 +19,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 @Category(IntegrationTest.class)
@@ -38,17 +39,20 @@ public class TestUnheatedBuildings {
     private List<PersonReference> peopleReferences;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws IOException, ExecutionException, InterruptedException {
         this.dwellings = this.createDwellings();
         this.dwellingReferences = this.dwellings
                 .stream()
                 .map(dwelling -> new DwellingReference(dwelling))
                 .collect(Collectors.toList());
         this.peopleReferences = this.createPeopleReferences(this.dwellingReferences);
+        DwellingSetReference dwellingSetReference = new DwellingSetReference(new DwellingSet(this.dwellingReferences));
+        DataLoggerReference dataLoggerReference = new DataLoggerReference(new DataLogger(dwellingSetReference));
 
-        this.conductor = new Conductor(new CitySimulation(new HashSet<>(this.dwellingReferences),
+        this.conductor = new Conductor(new CitySimulation(dwellingSetReference,
                                                           new HashSet<>(this.peopleReferences),
-                                                          CONSTANT_OUTDOOR_TEMPERATURE) {
+                                                          CONSTANT_OUTDOOR_TEMPERATURE,
+                                                          dataLoggerReference) {
         });
     }
 

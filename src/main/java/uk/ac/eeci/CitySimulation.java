@@ -14,19 +14,22 @@ import java.util.concurrent.ExecutionException;
  */
 public class CitySimulation implements ISimulation {
 
-    private final Set<DwellingReference> dwellings;
+    private final DwellingSetReference dwellings;
     private final Set<PersonReference> people;
     private final double outdoorTemperature;
+    private final DataLoggerReference dataLoggerReference;
 
     /**
      * @param dwellings The set of all dwellings in the city.
      * @param people The set of all people in the city.
      * @param outdoorTemperature The constant outdoor temperature in the city.
      */
-    public CitySimulation(Set<DwellingReference> dwellings, Set<PersonReference> people, double outdoorTemperature) {
+    public CitySimulation(DwellingSetReference dwellings, Set<PersonReference> people,
+                          double outdoorTemperature, DataLoggerReference dataLoggerReference) {
         this.dwellings = dwellings;
         this.people = people;
         this.outdoorTemperature = outdoorTemperature;
+        this.dataLoggerReference = dataLoggerReference;
     }
 
     @Override
@@ -41,12 +44,13 @@ public class CitySimulation implements ISimulation {
         CompletableFuture.allOf(array).get();
 
         List<CompletableFuture<Void>> dwellingSteps = new ArrayList<>();
-        for (DwellingReference dwelling : this.dwellings) {
+        for (DwellingReference dwelling : this.dwellings.getDwellings().get()) {
             dwellingSteps.add(dwelling.step(this.outdoorTemperature));
         }
         CompletableFuture<Void>[] dStepsArray = new CompletableFuture[dwellingSteps.size()];
         dStepsArray = dwellingSteps.toArray(dStepsArray);
         CompletableFuture.allOf(dStepsArray).get();
+        this.dataLoggerReference.step().get();
     }
 
     @Override
