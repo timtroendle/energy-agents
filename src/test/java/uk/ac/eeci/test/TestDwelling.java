@@ -3,10 +3,12 @@ package uk.ac.eeci.test;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.eeci.Dwelling;
+import uk.ac.eeci.DwellingReference;
 import uk.ac.eeci.HeatingControlStrategy;
 import uk.ac.eeci.PersonReference;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
@@ -21,6 +23,7 @@ public class TestDwelling {
     private double EPSILON = 0.0001;
     private double INITIAL_DWELLING_TEMPERATURE = 22;
     private Dwelling dwelling;
+    private DwellingReference dwellingReference;
     private HeatingControlStrategy controlStrategy = mock(HeatingControlStrategy.class);
     private PersonReference person = mock(PersonReference.class);
     private Set<PersonReference> personInSet;
@@ -35,6 +38,7 @@ public class TestDwelling {
         this.dwelling = new Dwelling(165000 * conditionedFloorArea, 200, Double.NEGATIVE_INFINITY,
                                      Double.POSITIVE_INFINITY, INITIAL_DWELLING_TEMPERATURE,
                                      conditionedFloorArea, 60 * 60, this.controlStrategy);
+        this.dwellingReference = new DwellingReference(this.dwelling);
     }
 
     @Test
@@ -101,6 +105,12 @@ public class TestDwelling {
         this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
         assertThat(this.dwelling.getTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
         assertThat(this.dwelling.getTemperature(), is(greaterThanOrEqualTo(21.0)));
+    }
+
+    @Test
+    public void canAccessTemperatureThroughReference() throws ExecutionException, InterruptedException {
+        double temp = this.dwellingReference.getTemperature().get();
+        assertThat(temp, is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }
 
 }
