@@ -14,4 +14,8 @@ public class DataLoggerReference extends Reference<DataLogger> {
         return CompletableFuture.runAsync(this.referent::step, this.executor);
     }
 
+    public CompletableFuture<Void> write() {
+        return this.referent.write();
+    }
+
 }

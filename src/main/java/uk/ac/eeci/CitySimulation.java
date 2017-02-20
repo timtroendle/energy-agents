@@ -23,11 +23,11 @@ public class CitySimulation implements ISimulation {
      * @param outdoorTemperature The constant outdoor temperature in the city.
      */
     public CitySimulation(Collection<DwellingReference> dwellings, Collection<PersonReference> people,
-                          double outdoorTemperature, Collection<DataPointReference> datapoints) {
+                          double outdoorTemperature, DataLoggerReference dataLoggerReference) {
         this.dwellings = new HashSet<>(dwellings);
         this.people = new HashSet<>(people);
         this.outdoorTemperature = outdoorTemperature;
-        this.dataLoggerReference = new DataLoggerReference(new DataLogger(datapoints));
+        this.dataLoggerReference = dataLoggerReference;
     }
 
     @Override
@@ -48,11 +48,19 @@ public class CitySimulation implements ISimulation {
         CompletableFuture<Void>[] dStepsArray = new CompletableFuture[dwellingSteps.size()];
         dStepsArray = dwellingSteps.toArray(dStepsArray);
         CompletableFuture.allOf(dStepsArray).get();
-        this.dataLoggerReference.step().get();
+        if (this.dataLoggerReference != null) {
+            this.dataLoggerReference.step().get();
+        }
     }
 
     @Override
     public void stop() {
-        // nothing to do
+        if (this.dataLoggerReference != null) {
+            try {
+                this.dataLoggerReference.write().get();
+            } catch (InterruptedException|ExecutionException e) {
+                e.printStackTrace(); // FIXME proper error handling
+            }
+        }
     }
 }

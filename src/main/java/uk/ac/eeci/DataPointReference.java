@@ -12,11 +12,15 @@ public class DataPointReference<K, T> extends Reference<DataPoint<K, T>> {
         super(referent);
     }
 
+    public CompletableFuture<String> getName() {
+        return CompletableFuture.supplyAsync(this.referent::getName, this.executor);
+    }
+
     public CompletableFuture<Void> step() {
         return CompletableFuture.runAsync(this.referent::step, this.executor);
     }
 
-    public CompletableFuture<Map<K, List<T>>> getRecord() {
+    public CompletableFuture<Map<Integer, List<T>>> getRecord() {
         return CompletableFuture.supplyAsync(this.referent::getRecord, this.executor);
     }
 }

@@ -13,11 +13,17 @@ public class DataPoint<K, T> {
     private final List<T> values;
     private final List<K> dataPointSources;
     private final Function<K, CompletableFuture<T>> valueSupplier;
+    private final String name;
 
-    public DataPoint(List<K> dataPointSources, Function<K, CompletableFuture<T>> valueSupplier) {
+    public DataPoint(String name, List<K> dataPointSources, Function<K, CompletableFuture<T>> valueSupplier) {
+        this.name = name;
         this.values = new ArrayList<T>();
         this.valueSupplier = valueSupplier;
         this.dataPointSources = dataPointSources;
+    }
+
+    public String getName() {
+        return this.name;
     }
 
     public void step() {
@@ -37,7 +43,7 @@ public class DataPoint<K, T> {
         this.values.addAll(this.mapToSortedList(values));
     }
 
-    public Map<K, List<T>> getRecord(){
+    public Map<Integer, List<T>> getRecord(){
         List<List<T>> temperatureRecord = new ArrayList<>();
         for (int i = 0; i < this.dataPointSources.size(); i++) {
             temperatureRecord.add(i, new ArrayList<>());
@@ -46,9 +52,9 @@ public class DataPoint<K, T> {
             int listIndex = i % this.dataPointSources.size();
             temperatureRecord.get(listIndex).add(this.values.get(i));
         }
-        Map<K, List<T>> temperatureRecordMap = new HashMap<>();
+        Map<Integer, List<T>> temperatureRecordMap = new HashMap<>();
         for (int i = 0; i < this.dataPointSources.size(); i++) {
-            temperatureRecordMap.put(this.dataPointSources.get(i), temperatureRecord.get(i));
+            temperatureRecordMap.put(i, temperatureRecord.get(i));
         }
         return temperatureRecordMap;
     }

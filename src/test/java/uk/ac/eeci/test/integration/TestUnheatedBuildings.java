@@ -50,7 +50,7 @@ public class TestUnheatedBuildings {
         this.conductor = new Conductor(new CitySimulation(this.dwellingReferences,
                                                           new HashSet<>(this.peopleReferences),
                                                           CONSTANT_OUTDOOR_TEMPERATURE,
-                                                          Collections.EMPTY_LIST) {
+                                                          null) {
         });
     }
 
