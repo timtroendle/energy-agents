@@ -13,6 +13,7 @@ import uk.ac.eeci.Person.Activity;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
+import java.time.*;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -28,6 +29,8 @@ public class TestDataLogging {
 
     private final static int NUMBER_STEPS = 5;
     private final static double CONSTANT_OUTDOOR_TEMPERATURE = 24.0;
+    private final static ZonedDateTime INITIAL_TIME = ZonedDateTime.of(2017, 2, 21, 10, 10, 0, 0, ZoneId.of("Europe/Paris"));
+    private final static Duration TIME_STEP_SIZE = Duration.ofMinutes(10);
     private Conductor conductor;
     private Dwelling dwelling1 = mock(Dwelling.class);
     private Dwelling dwelling2 = mock(Dwelling.class);
@@ -37,6 +40,8 @@ public class TestDataLogging {
     private DataPoint<DwellingReference, Double> temperatureDataPoint;
     private DataPoint<PersonReference, Person.Activity> activityDataPoint;
     private File tempFile;
+    private List<ZonedDateTime> timeIndex;
+    private List<ZonedDateTime> timeIndexInUTC;
 
 
     private static class ShortSimulation extends CitySimulation {
@@ -45,7 +50,7 @@ public class TestDataLogging {
 
         public ShortSimulation(Collection<DwellingReference> dwellings, Collection<PersonReference> people,
                                DataLoggerReference dataLoggerReference, double outdoorTemperature, int numberSteps) {
-            super(dwellings, people, outdoorTemperature, dataLoggerReference);
+            super(dwellings, people, outdoorTemperature, dataLoggerReference, INITIAL_TIME, TIME_STEP_SIZE);
             this.remainingSteps = numberSteps;
         }
 
@@ -61,6 +66,14 @@ public class TestDataLogging {
 
     @Before
     public void setUp() throws IOException, ExecutionException, InterruptedException {
+        this.timeIndex = new ArrayList<>();
+        for (int i = 1; i < 6; i++) {
+            this.timeIndex.add(INITIAL_TIME.plusSeconds(i * TIME_STEP_SIZE.toMinutes() * 60));
+        }
+        this.timeIndexInUTC = this.timeIndex
+                .stream()
+                .map(timeStamp -> timeStamp.withZoneSameInstant(ZoneOffset.UTC))
+                .collect(Collectors.toList());
         this.initDwellings();
         this.initPeople();
         List<DwellingReference> dwellingReferences = Stream.of(this.dwelling1, this.dwelling2)
@@ -114,24 +127,24 @@ public class TestDataLogging {
     @Test
     public void testLogsDwellingTemperature() {
         this.conductor.run();
-        Map<Integer, List<Double>> temperatures = this.temperatureDataPoint.getRecord();
-        for (List<Double> dwellingTimeSeries : temperatures.values()) {
-            assertThat(dwellingTimeSeries, hasSize(NUMBER_STEPS));
-        }
-        assertThat(temperatures.get(0), (Every.everyItem(is(equalTo(20.0)))));
-        assertThat(temperatures.get(1), (Every.everyItem(is(equalTo(30.0)))));
+        Map<Integer, TimeSeries<Double>> temperatures = this.temperatureDataPoint.getRecord();
+        assertThat(temperatures.get(0).getValues(), (Every.everyItem(is(equalTo(20.0)))));
+        assertThat(temperatures.get(1).getValues(), (Every.everyItem(is(equalTo(30.0)))));
+
+        assertThat(temperatures.get(0).getIndex(), is(equalTo(this.timeIndex)));
+        assertThat(temperatures.get(1).getIndex(), is(equalTo(this.timeIndex)));
     }
 
     @Test
     public void testLogsPeopleActivity() {
         this.conductor.run();
-        Map<Integer, List<Activity>> activities = this.activityDataPoint.getRecord();
-        for (List<Activity> personTimeSeries : activities.values()) {
-            assertThat(personTimeSeries, hasSize(NUMBER_STEPS));
-        }
-        assertThat(activities.get(0), (Every.everyItem(is(equalTo(Activity.HOME)))));
-        assertThat(activities.get(1), (Every.everyItem(is(equalTo(Activity.NOT_AT_HOME)))));
-        assertThat(activities.get(2), (Every.everyItem(is(equalTo(Activity.SLEEP_AT_HOME)))));
+        Map<Integer, TimeSeries<Activity>> activities = this.activityDataPoint.getRecord();
+        assertThat(activities.get(0).getValues(), (Every.everyItem(is(equalTo(Activity.HOME)))));
+        assertThat(activities.get(1).getValues(), (Every.everyItem(is(equalTo(Activity.NOT_AT_HOME)))));
+        assertThat(activities.get(2).getValues(), (Every.everyItem(is(equalTo(Activity.SLEEP_AT_HOME)))));
+
+        assertThat(activities.get(0).getIndex(), is(equalTo(this.timeIndex)));
+        assertThat(activities.get(1).getIndex(), is(equalTo(this.timeIndex)));
     }
 
     @Test
@@ -143,18 +156,23 @@ public class TestDataLogging {
         Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", filename));
         Statement stat = conn.createStatement();
 
-        Map<Integer, List<Double>> values = new HashMap<>();
-        values.put(0, new ArrayList<>());
-        values.put(1, new ArrayList<>());
+        Map<Integer, TimeSeries<Double>> values = new HashMap<>();
+        values.put(0, new TimeSeries<>());
+        values.put(1, new TimeSeries<>());
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", this.temperatureDataPoint.getName()));
         while (rs.next()) {
-            values.get(rs.getInt(1)).add(rs.getDouble(2));
+            values
+                    .get(rs.getInt(2))
+                    .add(Instant.ofEpochMilli(rs.getLong(1)).atZone(ZoneOffset.UTC), rs.getDouble(3));
         }
         rs.close();
         conn.close();
 
-        assertThat(values.get(0), (Every.everyItem(is(equalTo(20.0)))));
-        assertThat(values.get(1), (Every.everyItem(is(equalTo(30.0)))));
+        assertThat(values.get(0).getValues(), (Every.everyItem(is(equalTo(20.0)))));
+        assertThat(values.get(1).getValues(), (Every.everyItem(is(equalTo(30.0)))));
+
+        assertThat(values.get(0).getIndex(), is(equalTo(this.timeIndexInUTC)));
+        assertThat(values.get(1).getIndex(), is(equalTo(this.timeIndexInUTC)));
     }
 
     @Test
@@ -166,19 +184,25 @@ public class TestDataLogging {
         Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", filename));
         Statement stat = conn.createStatement();
 
-        Map<Integer, List<String>> values = new HashMap<>();
-        values.put(0, new ArrayList<>());
-        values.put(1, new ArrayList<>());
-        values.put(2, new ArrayList<>());
+        Map<Integer, TimeSeries<String>> values = new HashMap<>();
+        values.put(0, new TimeSeries<>());
+        values.put(1, new TimeSeries<>());
+        values.put(2, new TimeSeries<>());
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", this.activityDataPoint.getName()));
         while (rs.next()) {
-            values.get(rs.getInt(1)).add(rs.getString(2));
+            values
+                    .get(rs.getInt(2))
+                    .add(Instant.ofEpochMilli(rs.getLong(1)).atZone(ZoneOffset.UTC), rs.getString(3));
         }
         rs.close();
         conn.close();
 
-        assertThat(values.get(0), (Every.everyItem(is(equalTo("HOME")))));
-        assertThat(values.get(1), (Every.everyItem(is(equalTo("NOT_AT_HOME")))));
-        assertThat(values.get(2), (Every.everyItem(is(equalTo("SLEEP_AT_HOME")))));
+        assertThat(values.get(0).getValues(), (Every.everyItem(is(equalTo("HOME")))));
+        assertThat(values.get(1).getValues(), (Every.everyItem(is(equalTo("NOT_AT_HOME")))));
+        assertThat(values.get(2).getValues(), (Every.everyItem(is(equalTo("SLEEP_AT_HOME")))));
+
+        assertThat(values.get(0).getIndex(), is(equalTo(this.timeIndexInUTC)));
+        assertThat(values.get(1).getIndex(), is(equalTo(this.timeIndexInUTC)));
+        assertThat(values.get(2).getIndex(), is(equalTo(this.timeIndexInUTC)));
     }
 }

@@ -3,6 +3,8 @@ package uk.ac.eeci;
 import io.improbable.scienceos.EndSimulationException;
 import io.improbable.scienceos.ISimulation;
 
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -16,6 +18,8 @@ public class CitySimulation implements ISimulation {
     private final Set<PersonReference> people;
     private final double outdoorTemperature;
     private final DataLoggerReference dataLoggerReference;
+    private final Duration timeStepSize;
+    private ZonedDateTime currentTime;
 
     /**
      * @param dwellings The set of all dwellings in the city.
@@ -23,11 +27,14 @@ public class CitySimulation implements ISimulation {
      * @param outdoorTemperature The constant outdoor temperature in the city.
      */
     public CitySimulation(Collection<DwellingReference> dwellings, Collection<PersonReference> people,
-                          double outdoorTemperature, DataLoggerReference dataLoggerReference) {
+                          double outdoorTemperature, DataLoggerReference dataLoggerReference, ZonedDateTime startTime,
+                          Duration timeStepSize) {
         this.dwellings = new HashSet<>(dwellings);
         this.people = new HashSet<>(people);
         this.outdoorTemperature = outdoorTemperature;
         this.dataLoggerReference = dataLoggerReference;
+        this.currentTime = startTime;
+        this.timeStepSize = timeStepSize;
     }
 
     @Override
@@ -48,8 +55,10 @@ public class CitySimulation implements ISimulation {
         CompletableFuture<Void>[] dStepsArray = new CompletableFuture[dwellingSteps.size()];
         dStepsArray = dwellingSteps.toArray(dStepsArray);
         CompletableFuture.allOf(dStepsArray).get();
+
+        this.currentTime = this.currentTime.plus(this.timeStepSize);
         if (this.dataLoggerReference != null) {
-            this.dataLoggerReference.step().get();
+            this.dataLoggerReference.step(this.currentTime).get();
         }
     }
 

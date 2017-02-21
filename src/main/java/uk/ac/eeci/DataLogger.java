@@ -1,6 +1,7 @@
 package uk.ac.eeci;
 
 import java.sql.*;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -16,11 +17,11 @@ public class DataLogger {
         this.filename = filename;
     }
 
-    public void step() {
+    public void step(ZonedDateTime currentTime) {
         CompletableFuture<Void>[] steps = new CompletableFuture[this.dataPoints.size()];
         int i = 0;
         for (DataPointReference dataPoint : this.dataPoints) {
-            steps[i] = dataPoint.step();
+            steps[i] = dataPoint.step(currentTime);
             i++;
         }
         try {
@@ -43,11 +44,11 @@ public class DataLogger {
 
     private static class DataPointInternals {
         private final String dpName;
-        private final Map<Integer, List<Object>> values;
+        private final Map<Integer, TimeSeries<Object>> values;
 
         public DataPointInternals(Object dpName, Object values) { // FIXME raw type
             this.dpName = dpName.toString();
-            this.values = (Map<Integer, List<Object>>) values;
+            this.values = (Map<Integer, TimeSeries<Object>>) values;
         }
     }
 
@@ -76,20 +77,21 @@ public class DataLogger {
             throws SQLException {
         Statement stat = conn.createStatement();
         stat.executeUpdate(String.format("drop table if exists %s;", dp.dpName));
-        stat.executeUpdate(String.format("create table %s (id, value);", dp.dpName));
+        stat.executeUpdate(String.format("create table %s (timestamp, id, value);", dp.dpName));
         PreparedStatement prep = conn.prepareStatement(
-                String.format("insert into %s values (?, ?);", dp.dpName));
+                String.format("insert into %s values (?, ?, ?);", dp.dpName));
 
         boolean dataPointContainsDoubles = dataPointContainsDoubles(dp.values);
         for (int i = 0; i < 5; i++) {
             for (Integer j : dp.values.keySet()) {
-                prep.setInt(1, j);
+                prep.setTimestamp(1, Timestamp.from(dp.values.get(j).getIndex().get(i).toInstant()));
+                prep.setInt(2, j);
                 if (dataPointContainsDoubles) {
-                    Double value = (Double) dp.values.get(j).get(i);
-                    prep.setDouble(2, value);
+                    Double value = (Double) dp.values.get(j).getValues().get(i);
+                    prep.setDouble(3, value);
                 } else {
-                    String value = dp.values.get(j).get(i).toString();
-                    prep.setString(2, value);
+                    String value = dp.values.get(j).getValues().get(i).toString();
+                    prep.setString(3, value);
                 }
                 prep.addBatch();
             }
@@ -99,9 +101,9 @@ public class DataLogger {
         conn.setAutoCommit(true);
     }
 
-    private static boolean dataPointContainsDoubles(Map<Integer, List<Object>> dataPointValues) {
+    private static boolean dataPointContainsDoubles(Map<Integer, TimeSeries<Object>> dataPointValues) {
         try { // FIXME ugly duck typing
-            Double value = (Double) dataPointValues.get(0).get(0);
+            Double value = (Double) dataPointValues.get(0).getValues().get(0);
             return true;
         } catch (ClassCastException cce) {
             return false;

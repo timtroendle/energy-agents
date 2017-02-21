@@ -2,7 +2,7 @@ package uk.ac.eeci;
 
 import io.improbable.scienceos.Reference;
 
-import java.util.List;
+import java.time.ZonedDateTime;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -16,11 +16,11 @@ public class DataPointReference<K, T> extends Reference<DataPoint<K, T>> {
         return CompletableFuture.supplyAsync(this.referent::getName, this.executor);
     }
 
-    public CompletableFuture<Void> step() {
-        return CompletableFuture.runAsync(this.referent::step, this.executor);
+    public CompletableFuture<Void> step(ZonedDateTime currentTime) {
+        return CompletableFuture.runAsync(() -> this.referent.step(currentTime), this.executor);
     }
 
-    public CompletableFuture<Map<Integer, List<T>>> getRecord() {
+    public CompletableFuture<Map<Integer, TimeSeries<T>>> getRecord() {
         return CompletableFuture.supplyAsync(this.referent::getRecord, this.executor);
     }
 }
