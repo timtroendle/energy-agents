@@ -6,7 +6,6 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 public class DataPoint<K, T> {
@@ -29,20 +28,16 @@ public class DataPoint<K, T> {
         return this.name;
     }
 
-    public void step(ZonedDateTime currentTime) {
+    public CompletableFuture<Void> step(ZonedDateTime currentTime) {
         Map<K, T> values = new ConcurrentHashMap<>();
         CompletableFuture<Void>[] updates = new CompletableFuture[this.dataPointSources.size()];
         for (int i = 0; i < this.dataPointSources.size(); ++i) {
             updates[i] = this.getValue(this.dataPointSources.get(i))
                     .thenAccept(pair -> values.put(pair.getValue0(), pair.getValue1()));
         }
-        try {
-            CompletableFuture.allOf(updates).get();
-        } catch (InterruptedException|ExecutionException e) {
-            e.printStackTrace(); // FIXME proper exception handling necessary
-        }
-        this.values.addAll(this.mapToSortedList(values));
-        this.index.add(currentTime);
+        return CompletableFuture.allOf(updates)
+                .thenRun(() -> this.values.addAll(this.mapToSortedList(values)))
+                .thenRun(() -> this.index.add(currentTime));
     }
 
     public Map<Integer, TimeSeries<T>> getRecord(){

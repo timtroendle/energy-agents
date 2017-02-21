@@ -4,7 +4,6 @@ import java.sql.*;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 public class DataLogger {
 
@@ -17,18 +16,14 @@ public class DataLogger {
         this.filename = filename;
     }
 
-    public void step(ZonedDateTime currentTime) {
+    public CompletableFuture<Void> step(ZonedDateTime currentTime) {
         CompletableFuture<Void>[] steps = new CompletableFuture[this.dataPoints.size()];
         int i = 0;
         for (DataPointReference dataPoint : this.dataPoints) {
             steps[i] = dataPoint.step(currentTime);
             i++;
         }
-        try {
-            CompletableFuture.allOf(steps).get();
-        } catch (InterruptedException|ExecutionException e) {
-            e.printStackTrace(); // FIXME proper handling
-        }
+        return CompletableFuture.allOf(steps);
     }
 
     public CompletableFuture<Void> write() {

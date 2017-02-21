@@ -1,5 +1,6 @@
 package uk.ac.eeci.test;
 
+import io.improbable.scienceos.Reference;
 import org.junit.Before;
 import org.junit.Test;
 import uk.ac.eeci.Dwelling;
@@ -109,6 +110,7 @@ public class TestDwelling {
 
     @Test
     public void canAccessTemperatureThroughReference() throws ExecutionException, InterruptedException {
+        Reference.pool.setCurrentExecutor(Reference.pool.main);
         double temp = this.dwellingReference.getTemperature().get();
         assertThat(temp, is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }

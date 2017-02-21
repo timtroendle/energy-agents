@@ -11,10 +11,12 @@ public class PersonReference extends Reference<Person> {
     }
 
     public CompletableFuture<Void> step() {
-        return CompletableFuture.runAsync(() -> this.referent.step(), this.executor);
+        return CompletableFuture.runAsync(this.referent::step, this.executor)
+                .thenRunAsync(() ->{}, pool.currentExecutor());
     }
 
     public CompletableFuture<Person.Activity> getCurrentActivity() {
-        return CompletableFuture.supplyAsync(() -> this.referent.getCurrentActivity(), this.executor);
+        return CompletableFuture.supplyAsync(this.referent::getCurrentActivity, this.executor)
+                .thenApplyAsync(i -> i, pool.currentExecutor());
     }
 }
