@@ -43,7 +43,7 @@ public class TestUnheatedBuildings {
         this.dwellings = this.createDwellings();
         this.dwellingReferences = this.dwellings
                 .stream()
-                .map(dwelling -> new DwellingReference(dwelling))
+                .map(DwellingReference::new)
                 .collect(Collectors.toList());
         this.peopleReferences = this.createPeopleReferences(this.dwellingReferences);
 
@@ -60,7 +60,7 @@ public class TestUnheatedBuildings {
         for (int i = 0; i < 10; i++) {
             Dwelling d = new Dwelling(165000 * conditionedFloorArea, 2000, Double.NEGATIVE_INFINITY,
                     Double.POSITIVE_INFINITY, INITIAL_DWELLING_TEMPERATURE,
-                    conditionedFloorArea, 60 * 10, new ClimateChangingControlStrategy(0, 100));
+                    conditionedFloorArea, TIME_STEP_SIZE, new ClimateChangingControlStrategy(0, 100));
             dwellings.add(d);
         }
         return dwellings;

@@ -8,6 +8,7 @@ import uk.ac.eeci.DwellingReference;
 import uk.ac.eeci.HeatingControlStrategy;
 import uk.ac.eeci.PersonReference;
 
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -38,7 +39,7 @@ public class TestDwelling {
         double conditionedFloorArea = 100;
         this.dwelling = new Dwelling(165000 * conditionedFloorArea, 200, Double.NEGATIVE_INFINITY,
                                      Double.POSITIVE_INFINITY, INITIAL_DWELLING_TEMPERATURE,
-                                     conditionedFloorArea, 60 * 60, this.controlStrategy);
+                                     conditionedFloorArea, Duration.ofHours(1), this.controlStrategy);
         this.dwellingReference = new DwellingReference(this.dwelling);
     }
 

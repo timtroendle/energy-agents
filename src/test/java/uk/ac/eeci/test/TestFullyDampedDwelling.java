@@ -5,6 +5,8 @@ import org.junit.Test;
 import uk.ac.eeci.Dwelling;
 import uk.ac.eeci.HeatingControlStrategy;
 
+import java.time.Duration;
+
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.mock;
@@ -23,7 +25,7 @@ public class TestFullyDampedDwelling {
         double conditionedFloorArea = 1;
         this.dwelling = new Dwelling(3600 * conditionedFloorArea, 0, -1,
                 +1, INITIAL_DWELLING_TEMPERATURE,
-                conditionedFloorArea, 60 * 60, this.controlStrategy);
+                conditionedFloorArea, Duration.ofHours(1), this.controlStrategy);
     }
 
     @Test

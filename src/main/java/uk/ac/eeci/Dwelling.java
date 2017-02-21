@@ -1,5 +1,6 @@
 package uk.ac.eeci;
 
+import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
@@ -14,7 +15,7 @@ public class Dwelling {
     private final double conditionedFloorArea;
     private final HeatingControlStrategy heatingControlStrategy;
     private final Set<PersonReference> peopleInDwelling;
-    private final int timeStepSize;
+    private final Duration timeStepSize;
 
     /**
      * A simple energy model of a dwelling.
@@ -30,11 +31,11 @@ public class Dwelling {
      * @param initialDwellingTemperature dwelling temperature at start time [℃]
      * @param conditionedFloorArea [m**2]
      * @param controlStrategy the heating control strategy applied in this dwelling
-     * @param timeStepSize [s]
+     * @param timeStepSize the time step size of the dwelling simulation
      */
     public Dwelling(double heatMassCapacity, double heatTransmission, double maximumCoolingPower,
                     double maximumHeatingPower, double initialDwellingTemperature,
-                    double conditionedFloorArea, int timeStepSize,
+                    double conditionedFloorArea, Duration timeStepSize,
                     HeatingControlStrategy controlStrategy) {
         assert maximumCoolingPower <= 0;
         assert maximumHeatingPower >= 0;
@@ -103,11 +104,9 @@ public class Dwelling {
     }
 
     private double nextTemperature(double outsideTemperature, double thermalPower) {
-        double dt_by_cm = this.timeStepSize / this.heatMassCapacity;
+        double dt_by_cm = this.timeStepSize.toMillis() / 1000.0 / this.heatMassCapacity;
         return (this.currentTemperature * (1 - dt_by_cm * this.heatTransmission) +
                 dt_by_cm * (thermalPower + this.heatTransmission * outsideTemperature));
 
     }
-
-
 }
