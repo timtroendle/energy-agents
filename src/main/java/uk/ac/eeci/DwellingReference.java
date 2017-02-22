@@ -10,8 +10,8 @@ public class DwellingReference extends Reference<Dwelling> {
         super(referent);
     }
 
-    public CompletableFuture<Void> step(double outsideTemperature) {
-        return CompletableFuture.runAsync(() -> this.referent.step(outsideTemperature), this.executor);
+    public CompletableFuture<Void> step() {
+        return this.referent.step().thenRunAsync(() ->{}, pool.currentExecutor());
     }
 
     public CompletableFuture<Double> getTemperature() {

@@ -3,6 +3,7 @@ package uk.ac.eeci;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 public class Dwelling {
@@ -14,6 +15,7 @@ public class Dwelling {
     private final double maximumHeatingPower;
     private final double conditionedFloorArea;
     private final HeatingControlStrategy heatingControlStrategy;
+    private final EnvironmentReference environmentReference;
     private final Set<PersonReference> peopleInDwelling;
     private final Duration timeStepSize;
 
@@ -32,11 +34,12 @@ public class Dwelling {
      * @param conditionedFloorArea [m**2]
      * @param controlStrategy the heating control strategy applied in this dwelling
      * @param timeStepSize the time step size of the dwelling simulation
+     * @param environmentReference
      */
     public Dwelling(double heatMassCapacity, double heatTransmission, double maximumCoolingPower,
                     double maximumHeatingPower, double initialDwellingTemperature,
                     double conditionedFloorArea, Duration timeStepSize,
-                    HeatingControlStrategy controlStrategy) {
+                    HeatingControlStrategy controlStrategy, EnvironmentReference environmentReference) {
         assert maximumCoolingPower <= 0;
         assert maximumHeatingPower >= 0;
         this.currentTemperature = initialDwellingTemperature;
@@ -48,14 +51,17 @@ public class Dwelling {
         this.heatingControlStrategy = controlStrategy;
         this.timeStepSize = timeStepSize;
         this.peopleInDwelling = new HashSet<>();
+        this.environmentReference = environmentReference;
     }
 
     /**
      * Performs dwelling simulation for the next time step.
-     *
-     * @param outsideTemperature [℃]
      */
-    public void step(double outsideTemperature) {
+    public CompletableFuture<Void> step() {
+        return this.environmentReference.getCurrentTemperature().thenAccept(this::step);
+    }
+
+    private void step(double outsideTemperature) {
         double heatingSetPoint = this.heatingControlStrategy.heatingSetPoint(this.peopleInDwelling);
         double coolingSetPoint = this.heatingControlStrategy.coolingSetPoint(this.peopleInDwelling);
         Function<Double, Double> nextTemperature = thermalPower ->

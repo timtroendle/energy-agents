@@ -6,6 +6,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
 import uk.ac.eeci.*;
 import uk.ac.eeci.strategy.ClimateChangingControlStrategy;
 import uk.ac.eeci.Person.Activity;
@@ -19,6 +21,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -30,6 +33,7 @@ public class TestUnheatedBuildings {
     private final static Duration TIME_STEP_SIZE = Duration.ofMinutes(10);
     private final static ZoneId TIME_ZONE = ZoneOffset.UTC;
     private final static ZonedDateTime INITIAL_TIME = ZonedDateTime.of(2017, 2, 13, 15, 20, 0, 0, TIME_ZONE);
+    private final static int NUMBER_TIME_STEPS = 5;
     private final static double INITIAL_DWELLING_TEMPERATURE = 22.0;
     private final static double CONSTANT_OUTDOOR_TEMPERATURE = 24.0;
     private final static double EPSILON = 0.1;
@@ -37,9 +41,14 @@ public class TestUnheatedBuildings {
     private List<Dwelling> dwellings;
     private List<DwellingReference> dwellingReferences;
     private List<PersonReference> peopleReferences;
+    private Environment environment = mock(Environment.class);
+    private EnvironmentReference environmentReference;
 
     @Before
     public void setUp() throws IOException, ExecutionException, InterruptedException {
+        when(this.environment.getCurrentTemperature())
+                .thenReturn(CONSTANT_OUTDOOR_TEMPERATURE);
+        this.environmentReference = new EnvironmentReference(this.environment);
         this.dwellings = this.createDwellings();
         this.dwellingReferences = this.dwellings
                 .stream()
@@ -47,10 +56,14 @@ public class TestUnheatedBuildings {
                 .collect(Collectors.toList());
         this.peopleReferences = this.createPeopleReferences(this.dwellingReferences);
 
-        this.conductor = new Conductor(new CitySimulation(this.dwellingReferences,
-                                                          new HashSet<>(this.peopleReferences),
-                                                          CONSTANT_OUTDOOR_TEMPERATURE,
-                                                          null, INITIAL_TIME, TIME_STEP_SIZE) {
+        this.conductor = new Conductor(new ShortSimulation(
+                this.dwellingReferences,
+                new HashSet<>(this.peopleReferences),
+                new EnvironmentReference(this.environment),
+                null,
+                INITIAL_TIME,
+                TIME_STEP_SIZE,
+                NUMBER_TIME_STEPS) {
         });
     }
 
@@ -58,9 +71,10 @@ public class TestUnheatedBuildings {
         List<Dwelling> dwellings = new ArrayList<>();
         double conditionedFloorArea = 100;
         for (int i = 0; i < 10; i++) {
-            Dwelling d = new Dwelling(165000 * conditionedFloorArea, 2000, Double.NEGATIVE_INFINITY,
+            Dwelling d = new Dwelling(165000 * conditionedFloorArea, 20000, Double.NEGATIVE_INFINITY,
                     Double.POSITIVE_INFINITY, INITIAL_DWELLING_TEMPERATURE,
-                    conditionedFloorArea, TIME_STEP_SIZE, new ClimateChangingControlStrategy(0, 100));
+                    conditionedFloorArea, TIME_STEP_SIZE, new ClimateChangingControlStrategy(0, 100),
+                    this.environmentReference);
             dwellings.add(d);
         }
         return dwellings;
@@ -85,9 +99,9 @@ public class TestUnheatedBuildings {
     }
 
     /**
-     * Conductor currently runs 100 steps, i.e. 16.6h.
-     * Dwellings are not heated and have a high heat transmission, hence it is expected
-     * that their internal temperature equals the outdoor temperature after 16.6h.
+     * Dwellings are not heated and have an (unrealistically) high heat transmission,
+     * hence it is expected that their internal temperature equals the outdoor temperature
+     * after the short simulation.
      */
     @Test
     public void testDwellingTemperatureApproachesOutdoorTemperature() {

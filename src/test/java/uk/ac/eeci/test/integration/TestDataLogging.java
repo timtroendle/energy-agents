@@ -1,7 +1,6 @@
 package uk.ac.eeci.test.integration;
 
 import io.improbable.scienceos.Conductor;
-import io.improbable.scienceos.EndSimulationException;
 import org.hamcrest.core.Every;
 import org.junit.After;
 import org.junit.Before;
@@ -15,6 +14,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.time.*;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -28,7 +28,6 @@ import static org.mockito.Mockito.when;
 public class TestDataLogging {
 
     private final static int NUMBER_STEPS = 5;
-    private final static double CONSTANT_OUTDOOR_TEMPERATURE = 24.0;
     private final static ZonedDateTime INITIAL_TIME = ZonedDateTime.of(2017, 2, 21, 10, 10, 0, 0, ZoneId.of("Europe/Paris"));
     private final static Duration TIME_STEP_SIZE = Duration.ofMinutes(10);
     private Conductor conductor;
@@ -37,32 +36,13 @@ public class TestDataLogging {
     private Person person1 = mock(Person.class);
     private Person person2 = mock(Person.class);
     private Person person3 = mock(Person.class);
+    private Environment environment = mock(Environment.class);
     private DataPoint<DwellingReference, Double> temperatureDataPoint;
     private DataPoint<PersonReference, Person.Activity> activityDataPoint;
     private File tempFile;
     private List<ZonedDateTime> timeIndex;
     private List<ZonedDateTime> timeIndexInUTC;
 
-
-    private static class ShortSimulation extends CitySimulation {
-
-        private int remainingSteps;
-
-        public ShortSimulation(Collection<DwellingReference> dwellings, Collection<PersonReference> people,
-                               DataLoggerReference dataLoggerReference, double outdoorTemperature, int numberSteps) {
-            super(dwellings, people, outdoorTemperature, dataLoggerReference, INITIAL_TIME, TIME_STEP_SIZE);
-            this.remainingSteps = numberSteps;
-        }
-
-        public void step() throws InterruptedException, ExecutionException, EndSimulationException {
-            if (this.remainingSteps > 0) {
-                super.step();
-                this.remainingSteps -= 1;
-            } else {
-                throw new EndSimulationException();
-            }
-        }
-    }
 
     @Before
     public void setUp() throws IOException, ExecutionException, InterruptedException {
@@ -102,8 +82,10 @@ public class TestDataLogging {
 
         this.conductor = new Conductor(new ShortSimulation(dwellingReferences,
                 new HashSet<>(peopleReferences),
+                new EnvironmentReference(this.environment),
                 dataLoggerReference,
-                CONSTANT_OUTDOOR_TEMPERATURE,
+                INITIAL_TIME,
+                TIME_STEP_SIZE,
                 NUMBER_STEPS) {
         });
     }
@@ -114,6 +96,8 @@ public class TestDataLogging {
     }
 
     private void initDwellings() {
+        when(this.dwelling1.step()).thenReturn(CompletableFuture.completedFuture(null));
+        when(this.dwelling2.step()).thenReturn(CompletableFuture.completedFuture(null));
         when(this.dwelling1.getTemperature()).thenReturn(20.0);
         when(this.dwelling2.getTemperature()).thenReturn(30.0);
     }

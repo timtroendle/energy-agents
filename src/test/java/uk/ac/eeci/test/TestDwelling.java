@@ -3,13 +3,11 @@ package uk.ac.eeci.test;
 import io.improbable.scienceos.Reference;
 import org.junit.Before;
 import org.junit.Test;
-import uk.ac.eeci.Dwelling;
-import uk.ac.eeci.DwellingReference;
-import uk.ac.eeci.HeatingControlStrategy;
-import uk.ac.eeci.PersonReference;
+import uk.ac.eeci.*;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
@@ -27,6 +25,7 @@ public class TestDwelling {
     private Dwelling dwelling;
     private DwellingReference dwellingReference;
     private HeatingControlStrategy controlStrategy = mock(HeatingControlStrategy.class);
+    private EnvironmentReference environment = mock(EnvironmentReference.class);
     private PersonReference person = mock(PersonReference.class);
     private Set<PersonReference> personInSet;
 
@@ -36,16 +35,18 @@ public class TestDwelling {
         this.personInSet.add(this.person);
         when(this.controlStrategy.heatingSetPoint(any())).thenReturn(21.9);
         when(this.controlStrategy.coolingSetPoint(any())).thenReturn(26.0);
+        when(this.environment.getCurrentTemperature())
+                .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE));
         double conditionedFloorArea = 100;
         this.dwelling = new Dwelling(165000 * conditionedFloorArea, 200, Double.NEGATIVE_INFINITY,
                                      Double.POSITIVE_INFINITY, INITIAL_DWELLING_TEMPERATURE,
-                                     conditionedFloorArea, Duration.ofHours(1), this.controlStrategy);
+                                     conditionedFloorArea, Duration.ofHours(1), this.controlStrategy, this.environment);
         this.dwellingReference = new DwellingReference(this.dwelling);
     }
 
     @Test
     public void testDwellingAsksControlStrategyForSetPoints() {
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
+        this.dwelling.step();
         verify(this.controlStrategy, atLeastOnce()).coolingSetPoint(any());
         verify(this.controlStrategy, atLeastOnce()).heatingSetPoint(any());
     }
@@ -53,14 +54,14 @@ public class TestDwelling {
     @Test
     public void testWhenPersonEntersDwellingItIsHandedOverToControlStrategy() {
         this.dwelling.enter(this.person);
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
+        this.dwelling.step();
         verify(this.controlStrategy, atLeastOnce()).coolingSetPoint(this.personInSet);
         verify(this.controlStrategy, atLeastOnce()).heatingSetPoint(this.personInSet);
     }
 
     @Test
     public void testDwellingIsEmptyAtStartup() {
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
+        this.dwelling.step();
         verify(this.controlStrategy, atLeastOnce()).coolingSetPoint(new HashSet<>());
         verify(this.controlStrategy, atLeastOnce()).heatingSetPoint(new HashSet<>());
     }
@@ -69,33 +70,37 @@ public class TestDwelling {
     public void testWhenPersonLeavesItIsNotHandedOverToControlStrategy() {
         this.dwelling.enter(this.person);
         this.dwelling.leave(this.person);
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
+        this.dwelling.step();
         verify(this.controlStrategy, atLeastOnce()).coolingSetPoint(new HashSet<>());
         verify(this.controlStrategy, atLeastOnce()).heatingSetPoint(new HashSet<>());
     }
 
     @Test
     public void testDwellingTemperatureRemainsConstantWithSameTemperature() {
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
+        this.dwelling.step();
         assertThat(this.dwelling.getTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }
 
     @Test
     public void testDwellingTemperatureRisesWhenWarmerOutside() {
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE + 1);
+        when(this.environment.getCurrentTemperature())
+                .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE + 1));
+        this.dwelling.step();
         assertThat(this.dwelling.getTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
     @Test
     public void testDwellingTemperatureSinksWhenColderOutside() {
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE - 1);
+        when(this.environment.getCurrentTemperature())
+                .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE - 1));
+        this.dwelling.step();
         assertThat(this.dwelling.getTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
     @Test
     public void testDwellingGetsHeatedWhenBelowHeatingSetPoint() {
         when(this.controlStrategy.heatingSetPoint(any())).thenReturn(23.0);
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
+        this.dwelling.step();
         assertThat(this.dwelling.getTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
         assertThat(this.dwelling.getTemperature(), is(lessThanOrEqualTo(23.0)));
     }
@@ -104,7 +109,7 @@ public class TestDwelling {
     public void testDwellingGetsCooledWhenAboveCoolingSetPoint() {
         when(this.controlStrategy.heatingSetPoint(any())).thenReturn(20.0);
         when(this.controlStrategy.coolingSetPoint(any())).thenReturn(21.0);
-        this.dwelling.step(INITIAL_DWELLING_TEMPERATURE);
+        this.dwelling.step();
         assertThat(this.dwelling.getTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
         assertThat(this.dwelling.getTemperature(), is(greaterThanOrEqualTo(21.0)));
     }

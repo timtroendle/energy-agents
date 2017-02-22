@@ -16,7 +16,7 @@ public class CitySimulation implements ISimulation {
 
     private final Set<DwellingReference> dwellings;
     private final Set<PersonReference> people;
-    private final double outdoorTemperature;
+    private final EnvironmentReference environment;
     private final DataLoggerReference dataLoggerReference;
     private final Duration timeStepSize;
     private ZonedDateTime currentTime;
@@ -24,14 +24,13 @@ public class CitySimulation implements ISimulation {
     /**
      * @param dwellings The set of all dwellings in the city.
      * @param people The set of all people in the city.
-     * @param outdoorTemperature The constant outdoor temperature in the city.
      */
     public CitySimulation(Collection<DwellingReference> dwellings, Collection<PersonReference> people,
-                          double outdoorTemperature, DataLoggerReference dataLoggerReference, ZonedDateTime startTime,
-                          Duration timeStepSize) {
+                          EnvironmentReference environment, DataLoggerReference dataLoggerReference,
+                          ZonedDateTime startTime, Duration timeStepSize) {
         this.dwellings = new HashSet<>(dwellings);
         this.people = new HashSet<>(people);
-        this.outdoorTemperature = outdoorTemperature;
+        this.environment = environment;
         this.dataLoggerReference = dataLoggerReference;
         this.currentTime = startTime;
         this.timeStepSize = timeStepSize;
@@ -50,12 +49,13 @@ public class CitySimulation implements ISimulation {
 
         List<CompletableFuture<Void>> dwellingSteps = new ArrayList<>();
         for (DwellingReference dwelling : this.dwellings) {
-            dwellingSteps.add(dwelling.step(this.outdoorTemperature));
+            dwellingSteps.add(dwelling.step());
         }
         CompletableFuture<Void>[] dStepsArray = new CompletableFuture[dwellingSteps.size()];
         dStepsArray = dwellingSteps.toArray(dStepsArray);
         CompletableFuture.allOf(dStepsArray).get();
 
+        this.environment.step().get();
         this.currentTime = this.currentTime.plus(this.timeStepSize);
         if (this.dataLoggerReference != null) {
             this.dataLoggerReference.step(this.currentTime).get();
