@@ -10,7 +10,9 @@ public class DataLogger {
     private final Set<DataPointReference> dataPoints;
     private final String filename;
 
-    /** Logs data points during the simulation. */
+    /**
+     * Logs data points during the simulation.
+     */
     public DataLogger(Collection<DataPointReference> dataPoints, String filename) {
         this.dataPoints = new HashSet<>(dataPoints);
         this.filename = filename;
@@ -54,7 +56,7 @@ public class DataLogger {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", this.filename));
             writeDataPointToDatabase(conn, dp);
-        } catch (ClassNotFoundException|SQLException ex) {
+        } catch (ClassNotFoundException | SQLException ex) {
             ex.printStackTrace();
             System.out.println(String.format("Failed to write datapoint %s.", dp.dpName));
         } finally {
@@ -77,7 +79,8 @@ public class DataLogger {
                 String.format("insert into %s values (?, ?, ?);", dp.dpName));
 
         boolean dataPointContainsDoubles = dataPointContainsDoubles(dp.values);
-        for (int i = 0; i < 5; i++) {
+        int numberTimeSteps = dp.values.get(0).getIndex().size();
+        for (int i = 0; i < numberTimeSteps; i++) {
             for (Integer j : dp.values.keySet()) {
                 prep.setTimestamp(1, Timestamp.from(dp.values.get(j).getIndex().get(i).toInstant()));
                 prep.setInt(2, j);

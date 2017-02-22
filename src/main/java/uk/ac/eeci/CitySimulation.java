@@ -20,6 +20,7 @@ public class CitySimulation implements ISimulation {
     private final DataLoggerReference dataLoggerReference;
     private final Duration timeStepSize;
     private ZonedDateTime currentTime;
+    private int remainingSteps;
 
     /**
      * @param dwellings The set of all dwellings in the city.
@@ -27,17 +28,27 @@ public class CitySimulation implements ISimulation {
      */
     public CitySimulation(Collection<DwellingReference> dwellings, Collection<PersonReference> people,
                           EnvironmentReference environment, DataLoggerReference dataLoggerReference,
-                          ZonedDateTime startTime, Duration timeStepSize) {
+                          ZonedDateTime startTime, Duration timeStepSize, int numberSteps) {
         this.dwellings = new HashSet<>(dwellings);
         this.people = new HashSet<>(people);
         this.environment = environment;
         this.dataLoggerReference = dataLoggerReference;
         this.currentTime = startTime;
         this.timeStepSize = timeStepSize;
+        this.remainingSteps = numberSteps;
     }
 
     @Override
-    public void step() throws ExecutionException, InterruptedException, EndSimulationException {
+    public void step() throws InterruptedException, ExecutionException, EndSimulationException {
+        if (this.remainingSteps > 0) {
+            this.performStep();
+            this.remainingSteps -= 1;
+        } else {
+            throw new EndSimulationException();
+        }
+    }
+
+    private void performStep() throws ExecutionException, InterruptedException, EndSimulationException {
         List<CompletableFuture<Void>> peopleSteps = new ArrayList<>();
         for (PersonReference person : this.people) {
             peopleSteps.add(person.step());

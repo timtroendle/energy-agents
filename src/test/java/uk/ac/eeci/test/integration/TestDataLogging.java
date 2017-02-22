@@ -1,8 +1,6 @@
 package uk.ac.eeci.test.integration;
 
 import io.improbable.scienceos.Conductor;
-import io.improbable.scienceos.Reference;
-import io.improbable.scienceos.WorkerPool;
 import org.hamcrest.core.Every;
 import org.junit.After;
 import org.junit.Before;
@@ -84,7 +82,7 @@ public class TestDataLogging {
                 this.tempFile.getCanonicalPath()
         ));
 
-        this.conductor = new Conductor(new ShortSimulation(dwellingReferences,
+        this.conductor = new Conductor(new CitySimulation(dwellingReferences,
                 new HashSet<>(peopleReferences),
                 new EnvironmentReference(this.environment),
                 dataLoggerReference,

@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import uk.ac.eeci.Person.Activity;
 import uk.ac.eeci.HeterogeneousMarkovChain.MarkovChain;
@@ -29,6 +30,23 @@ public abstract class MarkovChainReader {
     private final static String FROM_ACTIVITY_COLUMN_NAME = "from_activity";
     private final static String TO_ACTIVITY_COLUMN_NAME = "to_activity";
     private final static String PROBABILITY_COLUMN_NAME = "probability";
+
+    static class MarkovChainEntry {
+
+        private final String day;
+        private final LocalTime timeOfDay;
+        private final Activity fromActivity;
+        private final Activity toActivity;
+        private final double probability;
+
+        MarkovChainEntry(String day, LocalTime time, Activity from, Activity to, double probability) {
+            this.day = day;
+            this.timeOfDay = time;
+            this.fromActivity = from;
+            this.toActivity = to;
+            this.probability = probability;
+        }
+    }
 
     /**
      * Reads {@link HeterogeneousMarkovChain}s from a csv input stream.
@@ -54,23 +72,43 @@ public abstract class MarkovChainReader {
         final int toActivityColumnIndex = MarkovChainReader.columnIndex(header, TO_ACTIVITY_COLUMN_NAME);
         final int probabilityColumnIndex = MarkovChainReader.columnIndex(header, PROBABILITY_COLUMN_NAME);
 
+        List<MarkovChainEntry> entries = list.stream().skip(1)
+                .map(record -> entryFromCSVRecord(record, dayColumnIndex, timeColumnIndex, fromActivityColumnIndex,
+                        toActivityColumnIndex, probabilityColumnIndex))
+                .collect(Collectors.toList());
+
+        return buildMarkovChainFromEntries(entries, timeStepSize, seed, timeZone);
+    }
+
+    static HeterogeneousMarkovChain<Activity> buildMarkovChainFromEntries(List<MarkovChainEntry> entries,
+                                                                          Duration timeStepSize,
+                                                                          long seed,
+                                                                          ZoneId timeZone) {
         Map<String, Map<LocalTime, MarkovChain<Activity>>> chain = new HashMap<>();
         String[] days = {"weekday", "weekend"};
         for (String day : days) {
             Map<LocalTime, MarkovChain<Activity>> dayChain = new HashMap<>();
             for (LocalTime time : MarkovChainReader.allTimeStampsOfOneDay(timeStepSize)) {
                 Map<Pair<Activity, Activity>, Double> probabilities = new HashMap<>();
-                list.stream()
-                        .filter(csvrecord -> csvrecord.get(dayColumnIndex).equals(day))
-                        .filter(csvrecord -> LocalTime.parse(csvrecord.get(timeColumnIndex), DateTimeFormatter.ISO_LOCAL_TIME).equals(time))
-                        .forEach(csvrecord -> probabilities.put(new Pair<>(Activity.valueOf(csvrecord.get(fromActivityColumnIndex)),
-                                                                           Activity.valueOf(csvrecord.get(toActivityColumnIndex))),
-                                                                Double.valueOf(csvrecord.get(probabilityColumnIndex))));
+                entries.stream()
+                        .filter(entry -> entry.day.equals(day))
+                        .filter(entry -> entry.timeOfDay.equals(time))
+                        .forEach(entry -> probabilities.put(new Pair<>(entry.fromActivity, entry.toActivity),
+                                entry.probability));
                 dayChain.put(time, new HeterogeneousMarkovChain.MarkovChain<>(probabilities, seed));
             }
             chain.put(day, dayChain);
         }
         return new HeterogeneousMarkovChain<>(chain.get("weekday"), chain.get("weekend"), timeZone);
+    }
+
+    private static MarkovChainEntry entryFromCSVRecord(CSVRecord record, int day, int time, int from, int to, int probability) {
+        return new MarkovChainEntry(
+                record.get(day),
+                LocalTime.parse(record.get(time), DateTimeFormatter.ISO_LOCAL_TIME),
+                Activity.valueOf(record.get(from)),
+                Activity.valueOf(record.get(to)),
+                Double.valueOf(record.get(probability)));
     }
 
     private static int columnIndex(CSVRecord header, String columnName) throws IOException {
@@ -92,4 +130,5 @@ public abstract class MarkovChainReader {
         } while (date.equals(tsp.toLocalDate()));
         return list;
     }
+
 }

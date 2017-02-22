@@ -35,7 +35,8 @@ public class TestCitySimulation {
                 new EnvironmentReference(this.environment),
                 new DataLoggerReference(this.dataLogger),
                 INITIAL_DATETIME,
-                TIME_STEP_SIZE);
+                TIME_STEP_SIZE,
+                100);
         Reference.pool.setCurrentExecutor(Reference.pool.main);
     }
 

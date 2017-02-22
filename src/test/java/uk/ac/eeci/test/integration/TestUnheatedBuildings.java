@@ -1,8 +1,6 @@
 package uk.ac.eeci.test.integration;
 
 import io.improbable.scienceos.Conductor;
-import io.improbable.scienceos.Reference;
-import io.improbable.scienceos.WorkerPool;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -24,7 +22,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -60,7 +57,7 @@ public class TestUnheatedBuildings {
                 .collect(Collectors.toList());
         this.peopleReferences = this.createPeopleReferences(this.dwellingReferences);
 
-        this.conductor = new Conductor(new ShortSimulation(
+        this.conductor = new Conductor(new CitySimulation(
                 this.dwellingReferences,
                 new HashSet<>(this.peopleReferences),
                 new EnvironmentReference(this.environment),
