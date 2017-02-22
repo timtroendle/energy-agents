@@ -1,6 +1,8 @@
 package uk.ac.eeci.test.integration;
 
 import io.improbable.scienceos.Conductor;
+import io.improbable.scienceos.Reference;
+import io.improbable.scienceos.WorkerPool;
 import org.hamcrest.core.Every;
 import org.junit.After;
 import org.junit.Before;
@@ -23,6 +25,7 @@ import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static uk.ac.eeci.test.integration.Utils.resetScienceOS;
 
 @Category(IntegrationTest.class)
 public class TestDataLogging {
@@ -46,6 +49,7 @@ public class TestDataLogging {
 
     @Before
     public void setUp() throws IOException, ExecutionException, InterruptedException {
+        resetScienceOS();
         this.timeIndex = new ArrayList<>();
         for (int i = 1; i < 6; i++) {
             this.timeIndex.add(INITIAL_TIME.plusSeconds(i * TIME_STEP_SIZE.toMinutes() * 60));

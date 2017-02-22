@@ -1,12 +1,15 @@
 package uk.ac.eeci.test.integration;
 
 import io.improbable.scienceos.Conductor;
+import io.improbable.scienceos.Reference;
+import io.improbable.scienceos.WorkerPool;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
+import static uk.ac.eeci.test.integration.Utils.resetScienceOS;
 
 import uk.ac.eeci.*;
 import uk.ac.eeci.strategy.ClimateChangingControlStrategy;
@@ -46,6 +49,7 @@ public class TestUnheatedBuildings {
 
     @Before
     public void setUp() throws IOException, ExecutionException, InterruptedException {
+        resetScienceOS();
         when(this.environment.getCurrentTemperature())
                 .thenReturn(CONSTANT_OUTDOOR_TEMPERATURE);
         this.environmentReference = new EnvironmentReference(this.environment);
