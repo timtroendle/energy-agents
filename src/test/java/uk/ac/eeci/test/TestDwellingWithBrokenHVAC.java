@@ -11,7 +11,6 @@ import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static uk.ac.eeci.test.integration.Utils.resetScienceOS;
 
 public class TestDwellingWithBrokenHVAC {
 

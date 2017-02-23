@@ -191,4 +191,29 @@ public class TestDataLogging {
         assertThat(values.get(1).getIndex(), is(equalTo(this.timeIndexInUTC)));
         assertThat(values.get(2).getIndex(), is(equalTo(this.timeIndexInUTC)));
     }
+
+    @Test
+    public void writesMetadataToDatabase() throws IOException, ClassNotFoundException, SQLException {
+        this.conductor.run();
+        String filename = this.tempFile.getCanonicalPath();
+
+        Class.forName("org.sqlite.JDBC");
+        Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", filename));
+        Statement stat = conn.createStatement();
+
+        Map<String, String> metadata = new HashMap<>();
+        ResultSet rs = stat.executeQuery(String.format("select * from %s;", DataLogger.METADATA_TABLE_NAME));
+        while (rs.next()) {
+            metadata.put(rs.getString(1), rs.getString(2));
+        }
+        rs.close();
+        conn.close();
+
+        assertThat(metadata.keySet(), containsInAnyOrder(
+                CitySimulation.METADATA_KEY_SIM_START,
+                CitySimulation.METADATA_KEY_SIM_END,
+                CitySimulation.METADATA_KEY_SIM_DURATION,
+                CitySimulation.METADATA_KEY_MODEL_VERSION
+        ));
+    }
 }

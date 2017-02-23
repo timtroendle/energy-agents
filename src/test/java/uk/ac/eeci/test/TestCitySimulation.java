@@ -4,15 +4,18 @@ import io.improbable.scienceos.EndSimulationException;
 import io.improbable.scienceos.Reference;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import uk.ac.eeci.*;
 
 import java.time.Duration;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.*;
 
 public class TestCitySimulation {
@@ -29,6 +32,7 @@ public class TestCitySimulation {
     public void setUp() {
         when(this.dwelling.step()).thenReturn(CompletableFuture.completedFuture(null));
         when(this.dataLogger.step(any())).thenReturn(CompletableFuture.completedFuture(null));
+        when(this.dataLogger.write(any())).thenReturn(CompletableFuture.completedFuture(null));
         this.citySimulation = new CitySimulation(
                 Arrays.asList(new DwellingReference(this.dwelling)),
                 Arrays.asList(new PersonReference(this.person)),
@@ -59,8 +63,30 @@ public class TestCitySimulation {
     }
 
     @Test
-    public void stepsEvironment() throws InterruptedException, ExecutionException, EndSimulationException {
+    public void stepsEnvironment() throws InterruptedException, ExecutionException, EndSimulationException {
         this.citySimulation.step();
         verify(this.environment, times(1)).step();
+    }
+
+    @Test
+    public void commandsWriteOfSimulationDataOnStop() throws InterruptedException, ExecutionException, EndSimulationException {
+        this.citySimulation.step();
+        verify(this.dataLogger, never()).write(any());
+        this.citySimulation.stop();
+        verify(this.dataLogger, times(1)).write(any());
+    }
+
+    @Test
+    public void gathersSimulationMetadata() throws InterruptedException, ExecutionException, EndSimulationException {
+        this.citySimulation.step(); // necessary to 'start' simulation as there is no startup hook
+        this.citySimulation.stop();
+        ArgumentCaptor<HashMap<String, String>> argument = ArgumentCaptor.forClass(HashMap.class);
+        verify(this.dataLogger).write(argument.capture());
+        assertThat(argument.getValue().keySet(), containsInAnyOrder(
+                CitySimulation.METADATA_KEY_SIM_START,
+                CitySimulation.METADATA_KEY_SIM_END,
+                CitySimulation.METADATA_KEY_SIM_DURATION,
+                CitySimulation.METADATA_KEY_MODEL_VERSION
+        ));
     }
 }
