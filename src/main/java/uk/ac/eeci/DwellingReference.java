@@ -11,7 +11,8 @@ public class DwellingReference extends Reference<Dwelling> {
     }
 
     public CompletableFuture<Void> step() {
-        return this.referent.step().thenRunAsync(() ->{}, pool.currentExecutor());
+        return CompletableFuture.completedFuture(null).thenComposeAsync((p) -> this.referent.step(), this.executor)
+                .thenRunAsync(() ->{}, pool.currentExecutor());
     }
 
     public CompletableFuture<Double> getTemperature() {

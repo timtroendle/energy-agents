@@ -13,11 +13,13 @@ public class DataLoggerReference extends Reference<DataLogger> {
     }
 
     public CompletableFuture<Void> step(ZonedDateTime currentTime) {
-        return this.referent.step(currentTime).thenRunAsync(() ->{}, pool.currentExecutor());
+        return CompletableFuture.completedFuture(null).thenComposeAsync((p) -> this.referent.step(currentTime), this.executor)
+                .thenRunAsync(() ->{}, pool.currentExecutor());
     }
 
     public CompletableFuture<Void> write(HashMap<String, String> metadata) {
-        return this.referent.write(metadata).thenRunAsync(() ->{}, pool.currentExecutor());
+        return CompletableFuture.completedFuture(null).thenComposeAsync((p) -> this.referent.write(metadata), this.executor)
+                .thenRunAsync(() ->{}, pool.currentExecutor());
     }
 
 }

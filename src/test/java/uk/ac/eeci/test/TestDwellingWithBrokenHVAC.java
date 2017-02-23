@@ -5,6 +5,7 @@ import org.junit.Test;
 import uk.ac.eeci.*;
 
 import java.time.Duration;
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
@@ -42,22 +43,22 @@ public class TestDwellingWithBrokenHVAC {
     }
 
     @Test
-    public void dwellingStaysColdWhenSameTempOutside() {
-        this.dwelling.step();
+    public void dwellingStaysColdWhenSameTempOutside() throws ExecutionException, InterruptedException {
+        this.dwelling.step().get();
         assertThat(this.dwelling.getTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }
 
     @Test
-    public void dwellingGetsColderWhenColderOutside() {
+    public void dwellingGetsColderWhenColderOutside() throws ExecutionException, InterruptedException {
         when(this.environment.getCurrentTemperature()).thenReturn(INITIAL_DWELLING_TEMPERATURE - 5);
-        this.dwelling.step();
+        this.dwelling.step().get();
         assertThat(this.dwelling.getTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
     @Test
-    public void dwellingGetsWarmerWhenWarmerOutside() {
+    public void dwellingGetsWarmerWhenWarmerOutside() throws ExecutionException, InterruptedException {
         when(this.environment.getCurrentTemperature()).thenReturn(INITIAL_DWELLING_TEMPERATURE + 5);
-        this.dwelling.step();
+        this.dwelling.step().get();
         assertThat(this.dwelling.getTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 }

@@ -18,7 +18,8 @@ public class DataPointReference<K, T> extends Reference<DataPoint<K, T>> {
     }
 
     public CompletableFuture<Void> step(ZonedDateTime currentTime) {
-        return this.referent.step(currentTime).thenRunAsync(() ->{}, pool.currentExecutor());
+        return CompletableFuture.completedFuture(null).thenComposeAsync((p) -> this.referent.step(currentTime), this.executor)
+                .thenRunAsync(() ->{}, pool.currentExecutor());
     }
 
     public CompletableFuture<Map<Integer, TimeSeries<T>>> getRecord() {
