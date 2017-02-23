@@ -33,6 +33,7 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_PPL_DWELLING_ID = "dwellingId";
     public final static String SQL_COLUMNS_PPL_MARKOV_ID = "markovChainId";
     public final static String SQL_COLUMNS_PPL_INITIAL_ACTIVITY = "initialActivity";
+    public final static String SQL_COLUMNS_PPL_INDEX = "index";
     public final static String SQL_COLUMNS_MARKOVS_INDEX = "index";
     public final static String SQL_COLUMNS_MARKOVS_TABLENAME = "tablename";
     public final static String SQL_COLUMNS_MARKOV_DAY = "day";
@@ -89,12 +90,12 @@ public class ScenarioBuilder {
             throws SQLException {
         SimulationParameter parameters = readSimulationParameters(con);
         EnvironmentReference environmentReference = readEnvironment(con, parameters.timeStepSize);
-        List<DwellingReference> dwellingReferences = readDwellings(con, parameters.timeStepSize, environmentReference);
-        List<PersonReference> peopleReferences = readPeople(con, dwellingReferences, parameters);
+        Map<Integer, DwellingReference> dwellingReferences = readDwellings(con, parameters.timeStepSize, environmentReference);
+        Map<Integer, PersonReference> peopleReferences = readPeople(con, dwellingReferences, parameters);
         DataLoggerReference dataLoggerReference = createDataLogger(dwellingReferences, peopleReferences, outputPath);
         return new CitySimulation(
-                dwellingReferences,
-                peopleReferences,
+                dwellingReferences.values(),
+                peopleReferences.values(),
                 environmentReference,
                 dataLoggerReference,
                 parameters.initialTime,
@@ -130,67 +131,83 @@ public class ScenarioBuilder {
         return new EnvironmentReference(env);
     }
 
-    private static List<DwellingReference> readDwellings(Connection conn, Duration timeStepSize, EnvironmentReference env)
+    private static Map<Integer, DwellingReference> readDwellings(Connection conn, Duration timeStepSize, EnvironmentReference env)
             throws SQLException {
-        List<Dwelling> dwellings = new ArrayList<>();
+        Map<Integer, DwellingReference> dwellings = new HashMap<>();
         Statement stat = conn.createStatement();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", SQL_TABLES_DWELLINGS));
         while (rs.next()) {
-            dwellings.add(new Dwelling(
-                    rs.getDouble(SQL_COLUMNS_DW_HEAT_MASS_CAPACITY),
-                    rs.getDouble(SQL_COLUMNS_DW_HEAT_TRANSMISSION),
-                    rs.getDouble(SQL_COLUMNS_DW_MAX_COOLING_POWER),
-                    rs.getDouble(SQL_COLUMNS_DW_MAX_HEATING_POWER),
-                    rs.getDouble(SQL_COLUMNS_DW_INITIAL_TEMPERATURE),
-                    rs.getDouble(SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA),
-                    timeStepSize,
-                    HEATING_CONTROL_STRATEGY,
-                    env
-            ));
+            dwellings.put(
+                    rs.getInt(SQL_COLUMNS_DW_INDEX),
+                    new DwellingReference(new Dwelling(
+                        rs.getDouble(SQL_COLUMNS_DW_HEAT_MASS_CAPACITY),
+                        rs.getDouble(SQL_COLUMNS_DW_HEAT_TRANSMISSION),
+                        rs.getDouble(SQL_COLUMNS_DW_MAX_COOLING_POWER),
+                        rs.getDouble(SQL_COLUMNS_DW_MAX_HEATING_POWER),
+                        rs.getDouble(SQL_COLUMNS_DW_INITIAL_TEMPERATURE),
+                        rs.getDouble(SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA),
+                        timeStepSize,
+                        HEATING_CONTROL_STRATEGY,
+                        env
+                    ))
+            );
         }
         rs.close();
-        return dwellings.stream().map(DwellingReference::new).collect(Collectors.toList());
+        return dwellings;
     }
 
-    private static List<PersonReference> readPeople(Connection conn, List<DwellingReference> dwellings,
+    private static Map<Integer, PersonReference> readPeople(Connection conn, Map<Integer, DwellingReference> dwellings,
                                                     SimulationParameter parameters) throws SQLException {
-        List<HeterogeneousMarkovChain<Activity>> markovChains = readMarkovChains(conn, parameters);
-        List<Person> people = new ArrayList<>();
+        Map<Integer, HeterogeneousMarkovChain<Activity>> markovChains = readMarkovChains(conn, parameters);
+        Map<Integer, Person> people = new HashMap<>();
         Statement stat = conn.createStatement();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", SQL_TABLES_PEOPLE));
         while (rs.next()) {
+            int personId = rs.getInt(SQL_COLUMNS_PPL_INDEX);
             int homeId = rs.getInt(SQL_COLUMNS_PPL_DWELLING_ID);
             int markovChainId = rs.getInt((SQL_COLUMNS_PPL_MARKOV_ID));
             Activity initialActivity = Activity.valueOf(rs.getString(SQL_COLUMNS_PPL_INITIAL_ACTIVITY));
-            people.add(new Person(
-                    markovChains.get(markovChainId - 1),
-                    initialActivity,
-                    parameters.initialTime,
-                    parameters.timeStepSize,
-                    null,
-                    dwellings.get(homeId - 1)
+            people.put(
+                    personId,
+                    new Person(
+                        markovChains.get(markovChainId),
+                        initialActivity,
+                        parameters.initialTime,
+                        parameters.timeStepSize,
+                        null,
+                        dwellings.get(homeId)
             ));
         }
         rs.close();
-        List<PersonReference> peopleReference = people.stream().map(PersonReference::new).collect(Collectors.toList());
-        for (int i = 0; i < people.size(); i++) {
-            people.get(i).setPersonReference(peopleReference.get(i));
+        Map<Integer, PersonReference> peopleReference = new HashMap<>();
+        for (Map.Entry<Integer, Person> entry : people.entrySet()) {
+            Person person = entry.getValue();
+            PersonReference ref = new PersonReference(person);
+            person.setPersonReference(ref);
+            peopleReference.put(entry.getKey(), ref);
         }
         return peopleReference;
     }
 
-    private static List<HeterogeneousMarkovChain<Activity>> readMarkovChains(Connection conn,
-                                                                             SimulationParameter parameters) throws SQLException {
-        List<String> markovChainTableNames = new ArrayList<>();
+    private static Map<Integer, HeterogeneousMarkovChain<Activity>> readMarkovChains(Connection conn,
+                                                                                     SimulationParameter parameters)
+            throws SQLException {
+        Map<Integer, String> markovChainTableNames = new HashMap<>();
         Statement stat = conn.createStatement();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", SQL_TABLES_MARKOV_CHAINS));
         while (rs.next()) {
-            markovChainTableNames.add(rs.getString(SQL_COLUMNS_MARKOVS_TABLENAME));
+            markovChainTableNames.put(
+                    rs.getInt(SQL_COLUMNS_MARKOVS_INDEX),
+                    rs.getString(SQL_COLUMNS_MARKOVS_TABLENAME));
         }
         rs.close();
-        List<HeterogeneousMarkovChain<Activity>> markovChains = new ArrayList<>();
-        for (String markovChainTableName : markovChainTableNames) {
-            markovChains.add(readMarkovChain(conn, markovChainTableName, parameters));
+        Map<Integer, HeterogeneousMarkovChain<Activity>> markovChains = new HashMap<>();
+        for (Map.Entry<Integer, String> entry : markovChainTableNames.entrySet()) {
+            markovChains.put(
+                    entry.getKey(),
+                    readMarkovChain(conn, entry.getValue(), parameters
+                    )
+            );
         }
         return markovChains;
     }
@@ -237,17 +254,18 @@ public class ScenarioBuilder {
         return parameters.get(0); // there could be more, but at the moment don't care
     }
 
-    private static DataLoggerReference createDataLogger(List<DwellingReference> dwellings, List<PersonReference> people,
+    private static DataLoggerReference createDataLogger(Map<Integer, DwellingReference> dwellings,
+                                                        Map<Integer, PersonReference> people,
                                                         String outputPath) {
         Set<DataPoint> dataPoints = new HashSet<>();
         dataPoints.add(new DataPoint<>(
                 TEMPERATURE_DATA_POINT_NAME,
-                new ArrayList<>(dwellings),
+                dwellings,
                 (DwellingReference::getTemperature)
         ));
         dataPoints.add(new DataPoint<>(
                 ACTIVITY_DATA_POINT_NAME,
-                new ArrayList<>(people),
+                people,
                 (PersonReference::getCurrentActivity)
         ));
         DataLogger dataLogger = new DataLogger(

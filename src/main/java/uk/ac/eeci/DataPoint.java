@@ -7,21 +7,26 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class DataPoint<K, T> {
 
     private final List<T> values;
     private final List<ZonedDateTime> index;
     private final List<K> dataPointSources;
+    private final Map<K, Integer> indexOfDataPointSources;
     private final Function<K, CompletableFuture<T>> valueSupplier;
     private final String name;
 
-    public DataPoint(String name, List<K> dataPointSources, Function<K, CompletableFuture<T>> valueSupplier) {
+    public DataPoint(String name, Map<Integer, K> dataPointSources, Function<K, CompletableFuture<T>> valueSupplier) {
         this.name = name;
         this.values = new ArrayList<>();
         this.index = new ArrayList<>();
         this.valueSupplier = valueSupplier;
-        this.dataPointSources = dataPointSources;
+        this.dataPointSources = new ArrayList<>(dataPointSources.values());
+        this.indexOfDataPointSources = dataPointSources.entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
     }
 
     public String getName() {
@@ -51,8 +56,10 @@ public class DataPoint<K, T> {
             timeSeries.get(listIndex).add(this.index.get(timeStepIndex), this.values.get(i));
         }
         Map<Integer, TimeSeries<T>> timeSeriesMap = new HashMap<>();
-        for (int i = 0; i < this.dataPointSources.size(); i++) {
-            timeSeriesMap.put(i, timeSeries.get(i));
+        for (K source : this.dataPointSources) {
+            int internalIndex = this.dataPointSources.indexOf(source);
+            int externalIndex = this.indexOfDataPointSources.get(source);
+            timeSeriesMap.put(externalIndex, timeSeries.get(internalIndex));
         }
         return timeSeriesMap;
     }

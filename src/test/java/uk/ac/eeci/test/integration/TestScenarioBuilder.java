@@ -1,23 +1,29 @@
 package uk.ac.eeci.test.integration;
 
 import io.improbable.scienceos.Conductor;
-import org.hamcrest.core.Every;
+import org.hamcrest.Matchers;
+import org.javatuples.Pair;
+import org.javatuples.Triplet;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import uk.ac.eeci.CitySimulation;
 import uk.ac.eeci.ScenarioBuilder;
+import uk.ac.eeci.TimeSeries;
 
 import java.io.*;
 import java.net.URL;
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
+import static org.hamcrest.Matchers.*;
 import static uk.ac.eeci.test.integration.Utils.resetScienceOS;
 
 @Category(IntegrationTest.class)
@@ -28,6 +34,29 @@ public class TestScenarioBuilder {
     private final static int NUMBER_DWELLINGS = 100;
     private final static int NUMBER_PEOPLE = 200;
     private final static int NUMBER_TIME_STEPS = 90;
+    private final static List<Integer> DWELLING_INDICES;
+    private final static List<Integer> PEOPLE_INDICES;
+    private final static ZonedDateTime INITIAL_DATE_TIME = ZonedDateTime.of(2015, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
+    private final static Duration TIME_STEPS_SIZE = Duration.ofHours(12);
+    private final static ZonedDateTime[] TIME_INDEX;
+
+    static {
+        DWELLING_INDICES = new ArrayList<>();
+        PEOPLE_INDICES = new ArrayList<>();
+        for (int i = 0; i < NUMBER_DWELLINGS; i++) {
+            DWELLING_INDICES.add(104 + i);
+        }
+        for (int i = 1; i < NUMBER_PEOPLE * 2; i += 2) {
+            PEOPLE_INDICES.add(i);
+        }
+        assertThat(DWELLING_INDICES.size(), is(equalTo(NUMBER_DWELLINGS)));
+        assertThat(PEOPLE_INDICES.size(), is(equalTo(NUMBER_PEOPLE)));
+
+        TIME_INDEX = new ZonedDateTime[NUMBER_TIME_STEPS];
+        for (int i = 1; i <= NUMBER_TIME_STEPS; i++) {
+            TIME_INDEX[i - 1] = INITIAL_DATE_TIME.plus(TIME_STEPS_SIZE.multipliedBy(i));
+        }
+    }
 
     private File tempOutPutFile;
     private URL inputURL;
@@ -47,51 +76,105 @@ public class TestScenarioBuilder {
     }
 
     @Test
-    public void resultContainsCompleteDwellingTemperatureRecord() throws ClassNotFoundException, SQLException, IOException {
+    public void resultContainsValidTemperatureRecord() throws ClassNotFoundException, SQLException, IOException {
         this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), this.tempOutPutFile.getCanonicalPath());
         new Conductor(this.citySimulation).run();
 
-        Class.forName("org.sqlite.JDBC");
-        Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", this.tempOutPutFile.getCanonicalPath()));
-        Statement stat = conn.createStatement();
+        Map<Integer, TimeSeries<Double>> temperatureTimeSeries = readTemperatureRecordFromDB();
 
-        Map<Integer, Integer> values = new HashMap<>();
-        for (int i = 0; i < NUMBER_DWELLINGS; i++) {
-            values.put(i, 0);
+        assertThat(temperatureTimeSeries.size(), is(equalTo(NUMBER_DWELLINGS)));
+        for (TimeSeries<Double> timeSeries : temperatureTimeSeries.values()) {
+            assertThat(timeSeries.getIndex(), Matchers.contains(TIME_INDEX));
         }
-        ResultSet rs = stat.executeQuery(String.format("select * from %s;", ScenarioBuilder.TEMPERATURE_DATA_POINT_NAME));
-        while (rs.next()) {
-            int dwellingId = rs.getInt("id");
-            values.put(dwellingId, values.get(dwellingId) + 1);
-        }
-        rs.close();
-        conn.close();
-
-        assertThat(values.values(), (Every.everyItem(is(equalTo(NUMBER_TIME_STEPS)))));
+        List<Integer> sortedIndexSet = new ArrayList<>(temperatureTimeSeries.keySet());
+        Collections.sort(sortedIndexSet);
+        assertThat(sortedIndexSet, is(equalTo(DWELLING_INDICES)));
     }
 
     @Test
-    public void resultContainsCompleteActivityRecord() throws ClassNotFoundException, SQLException, IOException {
+    public void resultContainsValidActivityRecord() throws ClassNotFoundException, SQLException, IOException {
         this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), this.tempOutPutFile.getCanonicalPath());
         new Conductor(this.citySimulation).run();
+
+        Map<Integer, TimeSeries<String>> activityTimeSeries = readActivityRecordFromDB();
+
+        assertThat(activityTimeSeries.size(), is(equalTo(NUMBER_PEOPLE)));
+        for (TimeSeries<String> timeSeries : activityTimeSeries.values()) {
+            assertThat(timeSeries.getIndex(), Matchers.contains(TIME_INDEX));
+        }
+        List<Integer> sortedIndexSet = new ArrayList<>(activityTimeSeries.keySet());
+        Collections.sort(sortedIndexSet);
+        assertThat(sortedIndexSet, is(equalTo(PEOPLE_INDICES)));
+    }
+
+    private Map<Integer, TimeSeries<Double>> readTemperatureRecordFromDB()
+            throws IOException, SQLException, ClassNotFoundException {
 
         Class.forName("org.sqlite.JDBC");
         Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", this.tempOutPutFile.getCanonicalPath()));
         Statement stat = conn.createStatement();
 
-        Map<Integer, Integer> values = new HashMap<>();
-        for (int i = 0; i < NUMBER_PEOPLE; i++) {
-            values.put(i, 0);
-        }
-        ResultSet rs = stat.executeQuery(String.format("select * from %s;", ScenarioBuilder.ACTIVITY_DATA_POINT_NAME));
+        List<Triplet<Integer, ZonedDateTime, Double>> entries = new ArrayList<>();
+        ResultSet rs = stat.executeQuery(String.format("select * from %s;", ScenarioBuilder.TEMPERATURE_DATA_POINT_NAME));
         while (rs.next()) {
-            int personId = rs.getInt("id");
-            values.put(personId, values.get(personId) + 1);
+            entries.add(new Triplet<>(
+                    rs.getInt(2),
+                    Instant.ofEpochMilli(rs.getLong(1)).atZone(ZoneOffset.UTC),
+                    rs.getDouble(3)
+            ));
         }
         rs.close();
         conn.close();
 
-        assertThat(values.values(), (Every.everyItem(is(equalTo(NUMBER_TIME_STEPS)))));
+        Map<Integer, TimeSeries<Double>> timeSeries = new HashMap<>();
+        List<Integer> indices = entries.stream().map(Triplet::getValue0).collect(Collectors.toList());
+        for (Integer index : indices) {
+            TimeSeries<Double> indexTimeSeries = new TimeSeries<>();
+            timeSeries.put(index, indexTimeSeries);
+            List<Pair<ZonedDateTime, Double>> timeSeriesEntries = entries.stream()
+                    .filter(entry -> entry.getValue0().equals(index))
+                    .map(entry -> new Pair<>(entry.getValue1(), entry.getValue2()))
+                    .collect(Collectors.toList());
+            for (Pair<ZonedDateTime, Double> timeSeriesEntry : timeSeriesEntries) {
+                indexTimeSeries.add(timeSeriesEntry);
+            }
+        }
+        return timeSeries;
+    }
+
+    private Map<Integer, TimeSeries<String>> readActivityRecordFromDB()
+            throws IOException, SQLException, ClassNotFoundException {
+
+        Class.forName("org.sqlite.JDBC");
+        Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", this.tempOutPutFile.getCanonicalPath()));
+        Statement stat = conn.createStatement();
+
+        List<Triplet<Integer, ZonedDateTime, String>> entries = new ArrayList<>();
+        ResultSet rs = stat.executeQuery(String.format("select * from %s;", ScenarioBuilder.ACTIVITY_DATA_POINT_NAME));
+        while (rs.next()) {
+            entries.add(new Triplet<>(
+                    rs.getInt(2),
+                    Instant.ofEpochMilli(rs.getLong(1)).atZone(ZoneOffset.UTC),
+                    rs.getString(3)
+            ));
+        }
+        rs.close();
+        conn.close();
+
+        Map<Integer, TimeSeries<String>> timeSeries = new HashMap<>();
+        List<Integer> indices = entries.stream().map(Triplet::getValue0).collect(Collectors.toList());
+        for (Integer index : indices) {
+            TimeSeries<String> indexTimeSeries = new TimeSeries<>();
+            timeSeries.put(index, indexTimeSeries);
+            List<Pair<ZonedDateTime, String>> timeSeriesEntries = entries.stream()
+                    .filter(entry -> entry.getValue0().equals(index))
+                    .map(entry -> new Pair<>(entry.getValue1(), entry.getValue2()))
+                    .collect(Collectors.toList());
+            for (Pair<ZonedDateTime, String> timeSeriesEntry : timeSeriesEntries) {
+                indexTimeSeries.add(timeSeriesEntry);
+            }
+        }
+        return timeSeries;
     }
 
 }

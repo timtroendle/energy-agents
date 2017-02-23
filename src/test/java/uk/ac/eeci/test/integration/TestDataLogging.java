@@ -64,14 +64,22 @@ public class TestDataLogging {
         List<PersonReference> peopleReferences = Stream.of(this.person1, this.person2, this.person3)
                 .map(PersonReference::new)
                 .collect(Collectors.toList());
+        Map<Integer, DwellingReference> indexedDwellings = new HashMap<>();
+        for (int i = 0; i < dwellingReferences.size(); i++) {
+            indexedDwellings.put(i, dwellingReferences.get(i));
+        }
         this.temperatureDataPoint =  new DataPoint<>(
                 "temperature",
-                dwellingReferences,
+                indexedDwellings,
                 (DwellingReference::getTemperature)
         );
+        Map<Integer, PersonReference> indexedPeople = new HashMap<>();
+        for (int i = 0; i < peopleReferences.size(); i++) {
+            indexedPeople.put(i, peopleReferences.get(i));
+        }
         this.activityDataPoint = new DataPoint<>(
                 "activity",
-                peopleReferences,
+                indexedPeople,
                 (PersonReference::getCurrentActivity)
         );
         this.tempFile = File.createTempFile("energy-agents", ".db");

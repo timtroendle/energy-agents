@@ -88,7 +88,7 @@ public class DataLogger {
         PreparedStatement prep = conn.prepareStatement(
                 String.format("insert into %s values (?, ?, ?);", dp.dpName));
 
-        int numberTimeSteps = dp.values.get(0).getIndex().size();
+        int numberTimeSteps = anyTimeSeries(dp.values).getIndex().size();
         for (int i = 0; i < numberTimeSteps; i++) {
             for (Integer j : dp.values.keySet()) {
                 prep.setTimestamp(1, Timestamp.from(dp.values.get(j).getIndex().get(i).toInstant()));
@@ -110,11 +110,17 @@ public class DataLogger {
 
     private static boolean dataPointContainsDoubles(Map<Integer, TimeSeries<Object>> dataPointValues) {
         try { // FIXME ugly duck typing
-            Double value = (Double) dataPointValues.get(0).getValues().get(0);
+            Double value = (Double) anyTimeSeries(dataPointValues).getValues().get(0);
             return true;
         } catch (ClassCastException cce) {
             return false;
         }
+    }
+
+    private static TimeSeries<Object> anyTimeSeries(Map<Integer, TimeSeries<Object>> timeSeriesMap) {
+        int indexOfAnyTimeSeries = new ArrayList<>(timeSeriesMap.keySet()).get(0);
+        return timeSeriesMap.get(indexOfAnyTimeSeries);
+
     }
 
     private void writeMetadata(HashMap<String, String> metadata) {
