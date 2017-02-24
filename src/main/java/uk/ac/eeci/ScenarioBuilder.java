@@ -70,7 +70,7 @@ public class ScenarioBuilder {
         try {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", databasePath));
-            simulation = readScenario(conn, outputPath);
+            simulation = readScenario(conn, databasePath, outputPath);
         } catch (ClassNotFoundException|SQLException ex) {
             ex.printStackTrace();
             System.out.println(String.format("Failed to read scenario from %s.", databasePath));
@@ -86,13 +86,13 @@ public class ScenarioBuilder {
         return simulation;
     }
 
-    private static CitySimulation readScenario(Connection con, String outputPath)
+    private static CitySimulation readScenario(Connection con, String inputPath, String outputPath)
             throws SQLException {
         SimulationParameter parameters = readSimulationParameters(con);
         EnvironmentReference environmentReference = readEnvironment(con, parameters.timeStepSize);
         Map<Integer, DwellingReference> dwellingReferences = readDwellings(con, parameters.timeStepSize, environmentReference);
         Map<Integer, PersonReference> peopleReferences = readPeople(con, dwellingReferences, parameters);
-        DataLoggerReference dataLoggerReference = createDataLogger(dwellingReferences, peopleReferences, outputPath);
+        DataLoggerReference dataLoggerReference = createDataLogger(dwellingReferences, peopleReferences, inputPath, outputPath);
         return new CitySimulation(
                 dwellingReferences.values(),
                 peopleReferences.values(),
@@ -256,7 +256,7 @@ public class ScenarioBuilder {
 
     private static DataLoggerReference createDataLogger(Map<Integer, DwellingReference> dwellings,
                                                         Map<Integer, PersonReference> people,
-                                                        String outputPath) {
+                                                        String inputPath, String outputPath) {
         Set<DataPoint> dataPoints = new HashSet<>();
         dataPoints.add(new DataPoint<>(
                 TEMPERATURE_DATA_POINT_NAME,
@@ -270,6 +270,7 @@ public class ScenarioBuilder {
         ));
         DataLogger dataLogger = new DataLogger(
                 dataPoints.stream().map(DataPointReference::new).collect(Collectors.toSet()),
+                inputPath,
                 outputPath
         );
         return new DataLoggerReference(dataLogger);

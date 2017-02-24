@@ -107,6 +107,31 @@ public class TestScenarioBuilder {
         assertThat(sortedIndexSet, is(equalTo(PEOPLE_INDICES)));
     }
 
+    @Test
+    public void resultContainsInput() throws SQLException, IOException {
+        String outputPath = this.tempOutPutFile.getCanonicalPath();
+        this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), outputPath);
+        new Conductor(this.citySimulation).run();
+
+        List<String> tableNames = new ArrayList<>();
+        try (Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", outputPath))) {
+            try (Statement stat = conn.createStatement()){
+                try (ResultSet rs = stat.executeQuery("SELECT name FROM sqlite_master WHERE type='table';")) {
+                    while (rs.next()) {
+                        tableNames.add(rs.getString(1));
+                    }
+                }
+            }
+        }
+
+        assertThat(tableNames, hasItems(
+                ScenarioBuilder.SQL_TABLES_DWELLINGS, ScenarioBuilder.SQL_TABLES_PEOPLE,
+                ScenarioBuilder.SQL_TABLES_ENVIRONMENT, ScenarioBuilder.SQL_TABLES_MARKOV_CHAINS,
+                ScenarioBuilder.SQL_TABLES_PARAMETERS
+                )
+        );
+    }
+
     private Map<Integer, TimeSeries<Double>> readTemperatureRecordFromDB()
             throws IOException, SQLException, ClassNotFoundException {
 

@@ -87,6 +87,7 @@ public class TestDataLogging {
                 Stream.of(this.temperatureDataPoint, this.activityDataPoint)
                         .map(DataPointReference::new)
                         .collect(Collectors.toList()),
+                null,
                 this.tempFile.getCanonicalPath()
         ));
 
