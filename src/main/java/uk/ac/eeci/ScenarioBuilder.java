@@ -174,7 +174,6 @@ public class ScenarioBuilder {
                         initialActivity,
                         parameters.initialTime,
                         parameters.timeStepSize,
-                        null,
                         dwellings.get(homeId)
             ));
         }
@@ -183,7 +182,6 @@ public class ScenarioBuilder {
         for (Map.Entry<Integer, Person> entry : people.entrySet()) {
             Person person = entry.getValue();
             PersonReference ref = new PersonReference(person);
-            person.setPersonReference(ref);
             peopleReference.put(entry.getKey(), ref);
         }
         return peopleReference;

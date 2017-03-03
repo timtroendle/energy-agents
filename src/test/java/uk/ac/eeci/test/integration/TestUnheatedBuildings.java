@@ -90,10 +90,8 @@ public class TestUnheatedBuildings {
             Reader in = new InputStreamReader(is);
             int dwellingReference = randomNumberGenerator.nextInt(dwellings.size());
             Person p = new Person(MarkovChainReader.readMarkovChainFromFile(in, TIME_STEP_SIZE, SEED, TIME_ZONE),
-                    Activity.NOT_AT_HOME, INITIAL_TIME, TIME_STEP_SIZE, null,
-                    this.dwellingReferences.get(dwellingReference));
+                    Activity.NOT_AT_HOME, INITIAL_TIME, TIME_STEP_SIZE, this.dwellingReferences.get(dwellingReference));
             PersonReference pRef = new PersonReference(p);
-            p.setPersonReference(pRef); // FIXME noooooo!
             people.add(pRef);
         }
         return people;

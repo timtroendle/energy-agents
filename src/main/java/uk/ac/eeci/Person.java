@@ -40,17 +40,15 @@ public class Person {
      * @param initialDateTime The date time at startup.
      * @param timeStepSize The time step size for the simulation. Must be consistent with the time step size
      *                     of the markov chain.
-     * @param reference A {@link PersonReference} to itself.
      * @param home A {@link DwellingReference} to this person's home.
      */
     public Person(HeterogeneousMarkovChain<Activity> markovChain, Activity initialActivity,
-                  ZonedDateTime initialDateTime, Duration timeStepSize, PersonReference reference,
-                  DwellingReference home) {
+                  ZonedDateTime initialDateTime, Duration timeStepSize, DwellingReference home) {
         this.markovChain = markovChain;
         this.currentActivity = initialActivity;
         this.currentTime = initialDateTime;
         this.timeStepSize = timeStepSize;
-        this.reference = reference;
+        this.reference = new PersonReference(this);
         this.home = home;
         this.atHome = false;
         this.updateLocation();
@@ -70,10 +68,6 @@ public class Person {
 
     public Activity getCurrentActivity() {
         return this.currentActivity;
-    }
-
-    public void setPersonReference(PersonReference reference) {
-        this.reference = reference; // FIXME ugly as fuck, don't do that.
     }
 
     private void updateLocation() {

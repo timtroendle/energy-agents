@@ -22,12 +22,10 @@ public class TestPerson {
     private HeterogeneousMarkovChain<Activity> markovChain = mock(HeterogeneousMarkovChain.class);
     private DwellingReference home = mock(DwellingReference.class);
     private Person person;
-    private PersonReference personReference = mock(PersonReference.class);
 
     @Before
     public void setUp() {
-        this.person = new Person(this.markovChain, INITIAL_ACTIVITY, INITIAL_DATETIME, TIME_STEP_SIZE,
-                this.personReference, home);
+        this.person = new Person(this.markovChain, INITIAL_ACTIVITY, INITIAL_DATETIME, TIME_STEP_SIZE, home);
     }
 
     @Test
@@ -55,7 +53,7 @@ public class TestPerson {
     public void testEntersHomeWhenStartingBeingAtHome() {
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME)).thenReturn(Activity.HOME);
         person.step();
-        verify(this.home).enter(this.personReference);
+        verify(this.home).enter(any());
     }
 
     @Test
@@ -64,7 +62,7 @@ public class TestPerson {
         person.step();
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME)).thenReturn(Activity.SLEEP_AT_HOME);
         person.step();
-        verify(this.home, times(1)).enter(this.personReference);
+        verify(this.home, times(1)).enter(any());
     }
 
     @Test
@@ -73,7 +71,7 @@ public class TestPerson {
         person.step();
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME)).thenReturn(Activity.NOT_AT_HOME);
         person.step();
-        verify(this.home).leave(this.personReference);
+        verify(this.home).leave(any());
     }
 
     @Test
@@ -84,6 +82,6 @@ public class TestPerson {
         person.step();
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME)).thenReturn(Activity.OTHER_HOME);
         person.step();
-        verify(this.home, times(1)).leave(this.personReference);
+        verify(this.home, times(1)).leave(any());
     }
 }
