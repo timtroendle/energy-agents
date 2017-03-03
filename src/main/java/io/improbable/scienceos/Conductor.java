@@ -19,12 +19,9 @@ public class Conductor implements Runnable {
     public void run() {
         try {
             int i;
-            for(i=0; i<100; ++i) {
+            while (true) {
                 sim.step();
             }
-            sleep(200);
-            sim.stop();
-            Reference.pool.shutdown();
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         } catch (EndSimulationException e) {
