@@ -1,6 +1,8 @@
 package uk.ac.eeci;
 
 import io.improbable.scienceos.Conductor;
+import io.improbable.scienceos.Reference;
+import io.improbable.scienceos.WorkerPool;
 import org.apache.commons.cli.*;
 
 public class CommandLineInterface {
@@ -41,6 +43,8 @@ public class CommandLineInterface {
     }
 
     private void run() {
+        Reference.pool = new WorkerPool(4); // FIXME shouldnt be here
+        Reference.pool.setCurrentExecutor(Reference.pool.main); // FIXME shouldnt be here
         CitySimulation citySimulation = ScenarioBuilder.readScenario(this.inputFilePath, this.outputFilePath);
         new Conductor(citySimulation).run();
     }
