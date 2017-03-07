@@ -105,7 +105,7 @@ public class TestUnheatedBuildings {
     @Test
     public void testDwellingTemperatureApproachesOutdoorTemperature() {
         this.conductor.run();
-        assertThat(this.dwellings.get(0).getTemperature(), is(closeTo(CONSTANT_OUTDOOR_TEMPERATURE, EPSILON)));
+        assertThat(this.dwellings.get(0).getCurrentTemperature(), is(closeTo(CONSTANT_OUTDOOR_TEMPERATURE, EPSILON)));
     }
 
 }

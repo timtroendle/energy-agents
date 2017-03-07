@@ -78,7 +78,7 @@ public class TestDwelling {
     @Test
     public void testDwellingTemperatureRemainsConstantWithSameTemperature() {
         this.dwelling.step();
-        assertThat(this.dwelling.getTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
+        assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }
 
     @Test
@@ -86,7 +86,7 @@ public class TestDwelling {
         when(this.environment.getCurrentTemperature())
                 .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE + 1));
         this.dwelling.step();
-        assertThat(this.dwelling.getTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
+        assertThat(this.dwelling.getCurrentTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
     @Test
@@ -94,7 +94,7 @@ public class TestDwelling {
         when(this.environment.getCurrentTemperature())
                 .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE - 1));
         this.dwelling.step();
-        assertThat(this.dwelling.getTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
+        assertThat(this.dwelling.getCurrentTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
     @Test
@@ -102,16 +102,16 @@ public class TestDwelling {
         when(this.environment.getCurrentTemperature())
                 .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE + 1));
         this.dwelling.step();
-        assertThat(this.dwelling.getThermalPower(), is(equalTo(0.0)));
+        assertThat(this.dwelling.getCurrentThermalPower(), is(equalTo(0.0)));
     }
 
     @Test
     public void testDwellingGetsHeatedWhenBelowHeatingSetPoint() {
         when(this.controlStrategy.heatingSetPoint(any())).thenReturn(23.0);
         this.dwelling.step();
-        assertThat(this.dwelling.getTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
-        assertThat(this.dwelling.getTemperature(), is(lessThanOrEqualTo(23.0)));
-        assertThat(this.dwelling.getThermalPower(), is(greaterThan(0.0)));
+        assertThat(this.dwelling.getCurrentTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
+        assertThat(this.dwelling.getCurrentTemperature(), is(lessThanOrEqualTo(23.0)));
+        assertThat(this.dwelling.getCurrentThermalPower(), is(greaterThan(0.0)));
     }
 
     @Test
@@ -119,15 +119,15 @@ public class TestDwelling {
         when(this.controlStrategy.heatingSetPoint(any())).thenReturn(20.0);
         when(this.controlStrategy.coolingSetPoint(any())).thenReturn(21.0);
         this.dwelling.step();
-        assertThat(this.dwelling.getTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
-        assertThat(this.dwelling.getTemperature(), is(greaterThanOrEqualTo(21.0)));
-        assertThat(this.dwelling.getThermalPower(), is(lessThan(0.0)));
+        assertThat(this.dwelling.getCurrentTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
+        assertThat(this.dwelling.getCurrentTemperature(), is(greaterThanOrEqualTo(21.0)));
+        assertThat(this.dwelling.getCurrentThermalPower(), is(lessThan(0.0)));
     }
 
     @Test
     public void canAccessTemperatureThroughReference() throws ExecutionException, InterruptedException {
         Reference.pool.setCurrentExecutor(Reference.pool.main);
-        double temp = this.dwellingReference.getTemperature().get();
+        double temp = this.dwellingReference.getCurrentTemperature().get();
         assertThat(temp, is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }
 

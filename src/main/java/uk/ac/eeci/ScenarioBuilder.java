@@ -260,12 +260,12 @@ public class ScenarioBuilder {
         dataPoints.add(new DataPoint<>(
                 TEMPERATURE_DATA_POINT_NAME,
                 dwellings,
-                (DwellingReference::getTemperature)
+                (DwellingReference::getCurrentTemperature)
         ));
         dataPoints.add(new DataPoint<>(
                 THERMAL_POWER_DATA_POINT_NAME,
                 dwellings,
-                (DwellingReference::getThermalPower)
+                (DwellingReference::getCurrentThermalPower)
         ));
         dataPoints.add(new DataPoint<>(
                 ACTIVITY_DATA_POINT_NAME,

@@ -40,8 +40,8 @@ public class TestFullyDampedDwelling {
         when(this.controlStrategy.heatingSetPoint(any())).thenReturn(23.0);
         when(this.controlStrategy.coolingSetPoint(any())).thenReturn(26.0);
         this.dwelling.step();
-        assertThat(this.dwelling.getTemperature(), is(closeTo(23, EPSILON)));
-        assertThat(this.dwelling.getThermalPower(), is(closeTo(MAXIMUM_HEATING_POWER, EPSILON)));
+        assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(23, EPSILON)));
+        assertThat(this.dwelling.getCurrentThermalPower(), is(closeTo(MAXIMUM_HEATING_POWER, EPSILON)));
     }
 
     @Test
@@ -49,8 +49,8 @@ public class TestFullyDampedDwelling {
         when(this.controlStrategy.heatingSetPoint(any())).thenReturn(24.0);
         when(this.controlStrategy.coolingSetPoint(any())).thenReturn(26.0);
         this.dwelling.step();
-        assertThat(this.dwelling.getTemperature(), is(closeTo(23, EPSILON)));
-        assertThat(this.dwelling.getThermalPower(), is(closeTo(MAXIMUM_HEATING_POWER, EPSILON)));
+        assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(23, EPSILON)));
+        assertThat(this.dwelling.getCurrentThermalPower(), is(closeTo(MAXIMUM_HEATING_POWER, EPSILON)));
     }
 
     @Test
@@ -58,8 +58,8 @@ public class TestFullyDampedDwelling {
         when(this.controlStrategy.heatingSetPoint(any())).thenReturn(18.0);
         when(this.controlStrategy.coolingSetPoint(any())).thenReturn(21.0);
         this.dwelling.step();
-        assertThat(this.dwelling.getTemperature(), is(closeTo(21, EPSILON)));
-        assertThat(this.dwelling.getThermalPower(), is(closeTo(MAXIMUM_COOLING_POWER, EPSILON)));
+        assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(21, EPSILON)));
+        assertThat(this.dwelling.getCurrentThermalPower(), is(closeTo(MAXIMUM_COOLING_POWER, EPSILON)));
     }
 
     @Test
@@ -67,8 +67,8 @@ public class TestFullyDampedDwelling {
         when(this.controlStrategy.heatingSetPoint(any())).thenReturn(18.0);
         when(this.controlStrategy.coolingSetPoint(any())).thenReturn(20.0);
         this.dwelling.step();
-        assertThat(this.dwelling.getTemperature(), is(closeTo(21, EPSILON)));
-        assertThat(this.dwelling.getThermalPower(), is(closeTo(MAXIMUM_COOLING_POWER, EPSILON)));
+        assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(21, EPSILON)));
+        assertThat(this.dwelling.getCurrentThermalPower(), is(closeTo(MAXIMUM_COOLING_POWER, EPSILON)));
     }
 
 }

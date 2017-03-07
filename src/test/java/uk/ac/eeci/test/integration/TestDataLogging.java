@@ -72,12 +72,12 @@ public class TestDataLogging {
         this.temperatureDataPoint =  new DataPoint<>(
                 "temperature",
                 indexedDwellings,
-                (DwellingReference::getTemperature)
+                (DwellingReference::getCurrentTemperature)
         );
         this.thermalPowerDataPoint =  new DataPoint<>(
                 "thermalPower",
                 indexedDwellings,
-                (DwellingReference::getThermalPower)
+                (DwellingReference::getCurrentThermalPower)
         );
         Map<Integer, PersonReference> indexedPeople = new HashMap<>();
         for (int i = 0; i < peopleReferences.size(); i++) {
@@ -115,10 +115,10 @@ public class TestDataLogging {
     private void initDwellings() {
         when(this.dwelling1.step()).thenReturn(CompletableFuture.completedFuture(null));
         when(this.dwelling2.step()).thenReturn(CompletableFuture.completedFuture(null));
-        when(this.dwelling1.getTemperature()).thenReturn(20.0);
-        when(this.dwelling2.getTemperature()).thenReturn(30.0);
-        when(this.dwelling1.getThermalPower()).thenReturn(100.1);
-        when(this.dwelling2.getThermalPower()).thenReturn(-87.2);
+        when(this.dwelling1.getCurrentTemperature()).thenReturn(20.0);
+        when(this.dwelling2.getCurrentTemperature()).thenReturn(30.0);
+        when(this.dwelling1.getCurrentThermalPower()).thenReturn(100.1);
+        when(this.dwelling2.getCurrentThermalPower()).thenReturn(-87.2);
     }
 
     private void initPeople() {

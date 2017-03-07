@@ -15,13 +15,13 @@ public class DwellingReference extends Reference<Dwelling> {
                 .thenRunAsync(() ->{}, pool.currentExecutor());
     }
 
-    public CompletableFuture<Double> getTemperature() {
-        return CompletableFuture.supplyAsync(this.referent::getTemperature, this.executor)
+    public CompletableFuture<Double> getCurrentTemperature() {
+        return CompletableFuture.supplyAsync(this.referent::getCurrentTemperature, this.executor)
                 .thenApplyAsync(i -> i, pool.currentExecutor());
     }
 
-    public CompletableFuture<Double> getThermalPower() {
-        return CompletableFuture.supplyAsync(this.referent::getThermalPower, this.executor)
+    public CompletableFuture<Double> getCurrentThermalPower() {
+        return CompletableFuture.supplyAsync(this.referent::getCurrentThermalPower, this.executor)
                 .thenApplyAsync(i -> i, pool.currentExecutor());
     }
 

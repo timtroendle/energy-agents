@@ -102,11 +102,11 @@ public class Dwelling {
         }
     }
 
-    public double getTemperature() {
+    public double getCurrentTemperature() {
         return this.currentTemperature;
     }
 
-    public double getThermalPower(){
+    public double getCurrentThermalPower(){
         return this.currentThermalPower;
     }
 
