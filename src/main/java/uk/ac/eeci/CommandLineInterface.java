@@ -4,8 +4,18 @@ import io.improbable.scienceos.Conductor;
 import io.improbable.scienceos.Reference;
 import io.improbable.scienceos.WorkerPool;
 import org.apache.commons.cli.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.appender.FileAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.LoggerContext;
+
 
 public class CommandLineInterface {
+
+    private final static String TOOL_NAME = "energy-agents";
+    private final static Logger logger = LogManager.getLogger("uk.ac.eeci.energyagents");
+    private final static String TMP_FILE_APPENDER_NAME = "TempFile";
 
     private String inputFilePath;
     private String outputFilePath;
@@ -30,7 +40,7 @@ public class CommandLineInterface {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("energy-agents", options);
+            formatter.printHelp(TOOL_NAME, options);
 
             System.exit(1);
             return;
@@ -43,9 +53,24 @@ public class CommandLineInterface {
     }
 
     private void run() {
+        logger.info(String.format("Hi there. This is %s version %s.", TOOL_NAME, CitySimulation.inferModelVersion()));
+        logTempFileName();
         Reference.pool = new WorkerPool(4); // FIXME shouldnt be here
         Reference.pool.setCurrentExecutor(Reference.pool.main); // FIXME shouldnt be here
+        logger.info(String.format("Attempting to read scenario description from file %s.", this.inputFilePath));
         CitySimulation citySimulation = ScenarioBuilder.readScenario(this.inputFilePath, this.outputFilePath);
+        logger.info("Start of the simulation.");
         new Conductor(citySimulation).run();
+        logger.info("Simulation terminated gracefully.");
+    }
+
+    private static void logTempFileName() {
+        final LoggerContext ctx = LoggerContext.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        FileAppender fileAppender = config.getAppender(TMP_FILE_APPENDER_NAME);
+        if (fileAppender != null) {
+            String logFileName = fileAppender.getFileName();
+            logger.info(String.format("A detailed log is in %s.", logFileName));
+        }
     }
 }

@@ -2,6 +2,8 @@ package uk.ac.eeci;
 
 import io.improbable.scienceos.EndSimulationException;
 import io.improbable.scienceos.ISimulation;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,6 +21,8 @@ import java.util.concurrent.ExecutionException;
  * Defines an entire simulation run.
  */
 public class CitySimulation implements ISimulation {
+
+    private final static Logger logger = LogManager.getLogger(CitySimulation.class.getName());
 
     public final static String METADATA_KEY_SIM_START = "startOfSimulation";
     public final static String METADATA_KEY_SIM_END = "endOfSimulation";
@@ -66,6 +70,7 @@ public class CitySimulation implements ISimulation {
     }
 
     private void performStep() throws ExecutionException, InterruptedException, EndSimulationException {
+        logger.debug(String.format("Simulating step at time %s.", this.currentTime));
         List<CompletableFuture<Void>> peopleSteps = new ArrayList<>();
         for (PersonReference person : this.people) {
             peopleSteps.add(person.step());
@@ -94,6 +99,7 @@ public class CitySimulation implements ISimulation {
     public void stop() {
         if (this.dataLoggerReference != null) {
             try {
+                logger.info("Attempting to write results to disk.");
                 this.dataLoggerReference.write(this.collectMetadata()).get();
             } catch (InterruptedException|ExecutionException e) {
                 e.printStackTrace(); // FIXME proper error handling
@@ -109,14 +115,14 @@ public class CitySimulation implements ISimulation {
         metadata.put(METADATA_KEY_SIM_START, this.simulationStartTime.atZone(ZoneId.systemDefault()).format(DATE_TIME_FORMATTER));
         metadata.put(METADATA_KEY_SIM_END, simEndTime.atZone(ZoneId.systemDefault()).format(DATE_TIME_FORMATTER));
         metadata.put(METADATA_KEY_SIM_DURATION, simDuration.toString());
-        metadata.put(METADATA_KEY_MODEL_VERSION, this.inferModelVersion());
+        metadata.put(METADATA_KEY_MODEL_VERSION, inferModelVersion());
 
         return metadata;
     }
 
-    private String inferModelVersion() {
+    public static String inferModelVersion() {
         final Properties properties = new Properties();
-        try (final InputStream stream = this.getClass().getResourceAsStream(METADATA_FILE_NAME)) {
+        try (final InputStream stream = CitySimulation.class.getResourceAsStream(METADATA_FILE_NAME)) {
             properties.load(stream);
             return properties.get(MODEL_VERSION_KEY).toString();
         } catch (IOException e) {
