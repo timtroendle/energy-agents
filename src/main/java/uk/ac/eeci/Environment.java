@@ -12,7 +12,10 @@ public class Environment {
         this.temperatureTimeSeries = temperatureTimeSeries;
         Optional<Duration> inferredTimeStepSize = this.temperatureTimeSeries.getConstantTimeStepSize();
         if (!inferredTimeStepSize.isPresent() || !inferredTimeStepSize.get().equals(timeStepSize)) {
-            String msg = "The temperature time series must have a constant time step size.";
+            String msg = String.format(
+                    "The temperature time series must have a constant time step size of size %s.",
+                    timeStepSize
+            );
             throw new IllegalArgumentException(msg);
         }
     }
