@@ -20,6 +20,11 @@ public class DwellingReference extends Reference<Dwelling> {
                 .thenApplyAsync(i -> i, pool.currentExecutor());
     }
 
+    public CompletableFuture<Double> getThermalPower() {
+        return CompletableFuture.supplyAsync(this.referent::getThermalPower, this.executor)
+                .thenApplyAsync(i -> i, pool.currentExecutor());
+    }
+
     public CompletableFuture<Void> enter(PersonReference person) {
         return CompletableFuture.runAsync(() -> this.referent.enter(person), this.executor)
                 .thenRunAsync(() ->{}, pool.currentExecutor());

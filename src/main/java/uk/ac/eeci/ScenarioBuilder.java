@@ -44,6 +44,7 @@ public class ScenarioBuilder {
 
     public final static String TEMPERATURE_DATA_POINT_NAME = "temperature";
     public final static String ACTIVITY_DATA_POINT_NAME = "activity";
+    public final static String THERMAL_POWER_DATA_POINT_NAME = "thermalPower";
 
     public final static ZoneOffset TIME_ZONE = ZoneOffset.UTC;
     public final static HeatingControlStrategy HEATING_CONTROL_STRATEGY = new ClimateChangingControlStrategy(20, 26);
@@ -260,6 +261,11 @@ public class ScenarioBuilder {
                 TEMPERATURE_DATA_POINT_NAME,
                 dwellings,
                 (DwellingReference::getTemperature)
+        ));
+        dataPoints.add(new DataPoint<>(
+                THERMAL_POWER_DATA_POINT_NAME,
+                dwellings,
+                (DwellingReference::getThermalPower)
         ));
         dataPoints.add(new DataPoint<>(
                 ACTIVITY_DATA_POINT_NAME,

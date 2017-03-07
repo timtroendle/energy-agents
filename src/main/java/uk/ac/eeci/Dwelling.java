@@ -9,6 +9,7 @@ import java.util.function.Function;
 public class Dwelling {
 
     private double currentTemperature;
+    private double currentThermalPower;
     private final double heatMassCapacity;
     private final double heatTransmission;
     private final double maximumCoolingPower;
@@ -43,6 +44,7 @@ public class Dwelling {
         assert maximumCoolingPower <= 0;
         assert maximumHeatingPower >= 0;
         this.currentTemperature = initialDwellingTemperature;
+        this.currentThermalPower = 0;
         this.heatMassCapacity = heatMassCapacity;
         this.heatTransmission = heatTransmission;
         this.maximumCoolingPower = maximumCoolingPower;
@@ -66,9 +68,11 @@ public class Dwelling {
         double coolingSetPoint = this.heatingControlStrategy.coolingSetPoint(this.peopleInDwelling);
         Function<Double, Double> nextTemperature = thermalPower ->
                 this.nextTemperature(outsideTemperature, thermalPower);
-        double nextTemperatureNoPower = nextTemperature.apply(0.0);
+        double noPower = 0.0;
+        double nextTemperatureNoPower = nextTemperature.apply(noPower);
         if (nextTemperatureNoPower >= heatingSetPoint && nextTemperatureNoPower <= coolingSetPoint) {
             this.currentTemperature = nextTemperatureNoPower;
+            this.currentThermalPower = noPower;
         }
         else {
             double setPoint;
@@ -94,11 +98,16 @@ public class Dwelling {
                 thermalPower = maxPower;
             }
             this.currentTemperature = nextTemperature.apply(thermalPower);
+            this.currentThermalPower = thermalPower;
         }
     }
 
     public double getTemperature() {
         return this.currentTemperature;
+    }
+
+    public double getThermalPower(){
+        return this.currentThermalPower;
     }
 
     public void enter(PersonReference person) {

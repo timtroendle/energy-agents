@@ -43,6 +43,12 @@ public class TestDwellingWithBrokenHVAC {
     }
 
     @Test
+    public void noThermalPowerWhenSameTempOutside() throws ExecutionException, InterruptedException {
+        this.dwelling.step().get();
+        assertThat(this.dwelling.getThermalPower(), is(equalTo(0.0)));
+    }
+
+    @Test
     public void dwellingStaysColdWhenSameTempOutside() throws ExecutionException, InterruptedException {
         this.dwelling.step().get();
         assertThat(this.dwelling.getTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
@@ -56,9 +62,23 @@ public class TestDwellingWithBrokenHVAC {
     }
 
     @Test
+    public void noThermalPowerWhenColderOutside() throws ExecutionException, InterruptedException {
+        when(this.environment.getCurrentTemperature()).thenReturn(INITIAL_DWELLING_TEMPERATURE - 5);
+        this.dwelling.step().get();
+        assertThat(this.dwelling.getThermalPower(), is(equalTo(0.0)));
+    }
+
+    @Test
     public void dwellingGetsWarmerWhenWarmerOutside() throws ExecutionException, InterruptedException {
         when(this.environment.getCurrentTemperature()).thenReturn(INITIAL_DWELLING_TEMPERATURE + 5);
         this.dwelling.step().get();
         assertThat(this.dwelling.getTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
+    }
+
+    @Test
+    public void noThermalPowerWhenWarmerOutside() throws ExecutionException, InterruptedException {
+        when(this.environment.getCurrentTemperature()).thenReturn(INITIAL_DWELLING_TEMPERATURE + 5);
+        this.dwelling.step().get();
+        assertThat(this.dwelling.getThermalPower(), is(equalTo(0.0)));
     }
 }

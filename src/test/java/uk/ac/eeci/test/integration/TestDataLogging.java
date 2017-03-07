@@ -39,6 +39,7 @@ public class TestDataLogging {
     private Person person3 = mock(Person.class);
     private Environment environment = mock(Environment.class);
     private DataPoint<DwellingReference, Double> temperatureDataPoint;
+    private DataPoint<DwellingReference, Double> thermalPowerDataPoint;
     private DataPoint<PersonReference, Person.Activity> activityDataPoint;
     private File tempFile;
     private List<ZonedDateTime> timeIndex;
@@ -73,6 +74,11 @@ public class TestDataLogging {
                 indexedDwellings,
                 (DwellingReference::getTemperature)
         );
+        this.thermalPowerDataPoint =  new DataPoint<>(
+                "thermalPower",
+                indexedDwellings,
+                (DwellingReference::getThermalPower)
+        );
         Map<Integer, PersonReference> indexedPeople = new HashMap<>();
         for (int i = 0; i < peopleReferences.size(); i++) {
             indexedPeople.put(i, peopleReferences.get(i));
@@ -84,7 +90,7 @@ public class TestDataLogging {
         );
         this.tempFile = File.createTempFile("energy-agents", ".db");
         DataLoggerReference dataLoggerReference = new DataLoggerReference(new DataLogger(
-                Stream.of(this.temperatureDataPoint, this.activityDataPoint)
+                Stream.of(this.temperatureDataPoint, this.activityDataPoint, this.thermalPowerDataPoint)
                         .map(DataPointReference::new)
                         .collect(Collectors.toList()),
                 null,
@@ -111,6 +117,8 @@ public class TestDataLogging {
         when(this.dwelling2.step()).thenReturn(CompletableFuture.completedFuture(null));
         when(this.dwelling1.getTemperature()).thenReturn(20.0);
         when(this.dwelling2.getTemperature()).thenReturn(30.0);
+        when(this.dwelling1.getThermalPower()).thenReturn(100.1);
+        when(this.dwelling2.getThermalPower()).thenReturn(-87.2);
     }
 
     private void initPeople() {
@@ -125,6 +133,17 @@ public class TestDataLogging {
         Map<Integer, TimeSeries<Double>> temperatures = this.temperatureDataPoint.getRecord();
         assertThat(temperatures.get(0).getValues(), (Every.everyItem(is(equalTo(20.0)))));
         assertThat(temperatures.get(1).getValues(), (Every.everyItem(is(equalTo(30.0)))));
+
+        assertThat(temperatures.get(0).getIndex(), is(equalTo(this.timeIndex)));
+        assertThat(temperatures.get(1).getIndex(), is(equalTo(this.timeIndex)));
+    }
+
+    @Test
+    public void testLogsDwellingThermalPower() {
+        this.conductor.run();
+        Map<Integer, TimeSeries<Double>> temperatures = this.thermalPowerDataPoint.getRecord();
+        assertThat(temperatures.get(0).getValues(), (Every.everyItem(is(equalTo(100.1)))));
+        assertThat(temperatures.get(1).getValues(), (Every.everyItem(is(equalTo(-87.2)))));
 
         assertThat(temperatures.get(0).getIndex(), is(equalTo(this.timeIndex)));
         assertThat(temperatures.get(1).getIndex(), is(equalTo(this.timeIndex)));
@@ -165,6 +184,34 @@ public class TestDataLogging {
 
         assertThat(values.get(0).getValues(), (Every.everyItem(is(equalTo(20.0)))));
         assertThat(values.get(1).getValues(), (Every.everyItem(is(equalTo(30.0)))));
+
+        assertThat(values.get(0).getIndex(), is(equalTo(this.timeIndexInUTC)));
+        assertThat(values.get(1).getIndex(), is(equalTo(this.timeIndexInUTC)));
+    }
+
+    @Test
+    public void writesThermalPowerToDatabase() throws IOException, SQLException, ClassNotFoundException {
+        this.conductor.run();
+        String filename = this.tempFile.getCanonicalPath();
+
+        Class.forName("org.sqlite.JDBC");
+        Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", filename));
+        Statement stat = conn.createStatement();
+
+        Map<Integer, TimeSeries<Double>> values = new HashMap<>();
+        values.put(0, new TimeSeries<>());
+        values.put(1, new TimeSeries<>());
+        ResultSet rs = stat.executeQuery(String.format("select * from %s;", this.thermalPowerDataPoint.getName()));
+        while (rs.next()) {
+            values
+                    .get(rs.getInt(2))
+                    .add(Instant.ofEpochMilli(rs.getLong(1)).atZone(ZoneOffset.UTC), rs.getDouble(3));
+        }
+        rs.close();
+        conn.close();
+
+        assertThat(values.get(0).getValues(), (Every.everyItem(is(equalTo(100.1)))));
+        assertThat(values.get(1).getValues(), (Every.everyItem(is(equalTo(-87.2)))));
 
         assertThat(values.get(0).getIndex(), is(equalTo(this.timeIndexInUTC)));
         assertThat(values.get(1).getIndex(), is(equalTo(this.timeIndexInUTC)));

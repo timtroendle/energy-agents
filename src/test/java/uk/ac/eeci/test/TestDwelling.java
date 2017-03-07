@@ -98,11 +98,20 @@ public class TestDwelling {
     }
 
     @Test
+    public void testNoThermalPowerWhenBetweenHeatingAndCoolingSetPoint() {
+        when(this.environment.getCurrentTemperature())
+                .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE + 1));
+        this.dwelling.step();
+        assertThat(this.dwelling.getThermalPower(), is(equalTo(0.0)));
+    }
+
+    @Test
     public void testDwellingGetsHeatedWhenBelowHeatingSetPoint() {
         when(this.controlStrategy.heatingSetPoint(any())).thenReturn(23.0);
         this.dwelling.step();
         assertThat(this.dwelling.getTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
         assertThat(this.dwelling.getTemperature(), is(lessThanOrEqualTo(23.0)));
+        assertThat(this.dwelling.getThermalPower(), is(greaterThan(0.0)));
     }
 
     @Test
@@ -112,6 +121,7 @@ public class TestDwelling {
         this.dwelling.step();
         assertThat(this.dwelling.getTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
         assertThat(this.dwelling.getTemperature(), is(greaterThanOrEqualTo(21.0)));
+        assertThat(this.dwelling.getThermalPower(), is(lessThan(0.0)));
     }
 
     @Test
