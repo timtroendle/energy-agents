@@ -1,6 +1,7 @@
 package uk.ac.eeci;
 
 import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -11,6 +12,7 @@ public class Dwelling {
 
     private double currentTemperature;
     private double currentThermalPower;
+    private ZonedDateTime currentTime;
     private final double heatMassCapacity;
     private final double heatTransmission;
     private final double maximumHeatingPower;
@@ -33,12 +35,13 @@ public class Dwelling {
      * @param initialDwellingTemperature dwelling temperature at start time [℃]
      * @param conditionedFloorArea [m**2]
      * @param controlStrategy the heating control strategy applied in this dwelling
+     * @param initialTime the initial time of the simulation
      * @param timeStepSize the time step size of the dwelling simulation
      * @param environmentReference
      */
     public Dwelling(double heatMassCapacity, double heatTransmission,
                     double maximumHeatingPower, double initialDwellingTemperature,
-                    double conditionedFloorArea, Duration timeStepSize,
+                    double conditionedFloorArea, ZonedDateTime initialTime, Duration timeStepSize,
                     HeatingControlStrategy controlStrategy, EnvironmentReference environmentReference) {
         assert maximumHeatingPower >= 0;
         this.currentTemperature = initialDwellingTemperature;
@@ -49,6 +52,7 @@ public class Dwelling {
         this.conditionedFloorArea = conditionedFloorArea;
         this.heatingControlStrategy = controlStrategy;
         this.timeStepSize = timeStepSize;
+        this.currentTime = initialTime;
         this.peopleInDwelling = new HashSet<>();
         this.environmentReference = environmentReference;
     }
@@ -61,7 +65,8 @@ public class Dwelling {
     }
 
     private void step(double outsideTemperature) {
-        Optional<Double> heatingSetPoint = this.heatingControlStrategy.heatingSetPoint(this.peopleInDwelling);
+        Optional<Double> heatingSetPoint = this.heatingControlStrategy.heatingSetPoint(this.currentTime,
+                                                                                       this.peopleInDwelling);
         Function<Double, Double> nextTemperature = thermalPower ->
                 this.nextTemperature(outsideTemperature, thermalPower);
         double noPower = 0.0;
@@ -86,6 +91,7 @@ public class Dwelling {
             this.currentTemperature = nextTemperature.apply(thermalPower);
             this.currentThermalPower = thermalPower;
         }
+        this.currentTime = this.currentTime.plus(this.timeStepSize);
     }
 
     public double getCurrentTemperature() {

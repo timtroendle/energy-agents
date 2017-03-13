@@ -3,6 +3,7 @@ package uk.ac.eeci.strategy;
 import uk.ac.eeci.HeatingControlStrategy;
 import uk.ac.eeci.PersonReference;
 
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.Set;
 
@@ -24,7 +25,7 @@ public class ClimateChangingControlStrategy implements HeatingControlStrategy {
     }
 
     @Override
-    public Optional<Double> heatingSetPoint(Set<PersonReference> peopleInDwelling) {
+    public Optional<Double> heatingSetPoint(ZonedDateTime timeStamp, Set<PersonReference> peopleInDwelling) {
         return Optional.of(this.heatingSetPoint);
     }
 

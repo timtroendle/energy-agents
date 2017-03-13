@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
-import static uk.ac.eeci.test.integration.Utils.resetScienceOS;
+import static uk.ac.eeci.test.utils.Utils.resetScienceOS;
 
 @Category(IntegrationTest.class)
 public class TestScenarioBuilder {

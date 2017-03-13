@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static uk.ac.eeci.test.integration.Utils.resetScienceOS;
+import static uk.ac.eeci.test.utils.Utils.resetScienceOS;
 
 @Category(IntegrationTest.class)
 public class TestDataLogging {

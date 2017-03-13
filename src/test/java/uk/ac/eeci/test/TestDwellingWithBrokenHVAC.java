@@ -5,6 +5,8 @@ import org.junit.Test;
 import uk.ac.eeci.*;
 
 import java.time.Duration;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
@@ -18,6 +20,7 @@ public class TestDwellingWithBrokenHVAC {
 
     private final static double EPSILON = 0.0001;
     private final static double INITIAL_DWELLING_TEMPERATURE = 16;
+    private final static ZonedDateTime INITIAL_TIME = ZonedDateTime.of(2017, 3, 13, 17, 40, 0, 0, ZoneId.of("Europe/Paris"));
     private final static Double MAX_HEATING_POWER = 0.0;
     private final static Duration TIME_STEP_SIZE = Duration.ofHours(1);
     private HeatingControlStrategy controlStrategy = mock(HeatingControlStrategy.class);
@@ -26,7 +29,7 @@ public class TestDwellingWithBrokenHVAC {
 
     @Before
     public void setUp() {
-        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(Optional.of(20.0));
+        when(this.controlStrategy.heatingSetPoint(any(), any())).thenReturn(Optional.of(20.0));
         when(this.environment.getCurrentTemperature()).thenReturn(INITIAL_DWELLING_TEMPERATURE);
         double conditionedFloorArea = 100;
         this.dwelling = new Dwelling(
@@ -35,6 +38,7 @@ public class TestDwellingWithBrokenHVAC {
                 MAX_HEATING_POWER,
                 INITIAL_DWELLING_TEMPERATURE,
                 conditionedFloorArea,
+                INITIAL_TIME,
                 TIME_STEP_SIZE,
                 this.controlStrategy,
                 new EnvironmentReference(this.environment));

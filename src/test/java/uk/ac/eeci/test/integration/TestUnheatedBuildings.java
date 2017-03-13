@@ -7,7 +7,7 @@ import org.junit.experimental.categories.Category;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
-import static uk.ac.eeci.test.integration.Utils.resetScienceOS;
+import static uk.ac.eeci.test.utils.Utils.resetScienceOS;
 
 import uk.ac.eeci.*;
 import uk.ac.eeci.strategy.ClimateChangingControlStrategy;
@@ -74,7 +74,7 @@ public class TestUnheatedBuildings {
         for (int i = 0; i < 10; i++) {
             Dwelling d = new Dwelling(165000 * conditionedFloorArea, 20000,
                     Double.POSITIVE_INFINITY, INITIAL_DWELLING_TEMPERATURE,
-                    conditionedFloorArea, TIME_STEP_SIZE, new ClimateChangingControlStrategy(0),
+                    conditionedFloorArea, INITIAL_TIME, TIME_STEP_SIZE, new ClimateChangingControlStrategy(0),
                     this.environmentReference);
             dwellings.add(d);
         }

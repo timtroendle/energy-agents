@@ -90,7 +90,7 @@ public class ScenarioBuilder {
             throws SQLException {
         SimulationParameter parameters = readSimulationParameters(con);
         EnvironmentReference environmentReference = readEnvironment(con, parameters.timeStepSize);
-        Map<Integer, DwellingReference> dwellingReferences = readDwellings(con, parameters.timeStepSize, environmentReference);
+        Map<Integer, DwellingReference> dwellingReferences = readDwellings(con, parameters, environmentReference);
         Map<Integer, PersonReference> peopleReferences = readPeople(con, dwellingReferences, parameters);
         DataLoggerReference dataLoggerReference = createDataLogger(dwellingReferences, peopleReferences, inputPath, outputPath);
         return new CitySimulation(
@@ -131,7 +131,8 @@ public class ScenarioBuilder {
         return new EnvironmentReference(env);
     }
 
-    private static Map<Integer, DwellingReference> readDwellings(Connection conn, Duration timeStepSize, EnvironmentReference env)
+    private static Map<Integer, DwellingReference> readDwellings(Connection conn, SimulationParameter parameters,
+                                                                 EnvironmentReference env)
             throws SQLException {
         Map<Integer, DwellingReference> dwellings = new HashMap<>();
         Statement stat = conn.createStatement();
@@ -145,7 +146,8 @@ public class ScenarioBuilder {
                         rs.getDouble(SQL_COLUMNS_DW_MAX_HEATING_POWER),
                         rs.getDouble(SQL_COLUMNS_DW_INITIAL_TEMPERATURE),
                         rs.getDouble(SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA),
-                        timeStepSize,
+                        parameters.initialTime,
+                        parameters.timeStepSize,
                         HEATING_CONTROL_STRATEGY,
                         env
                     ))

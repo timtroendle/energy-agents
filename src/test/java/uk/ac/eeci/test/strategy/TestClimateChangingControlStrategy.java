@@ -12,38 +12,38 @@ import uk.ac.eeci.strategy.ClimateChangingControlStrategy;
 import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static uk.ac.eeci.test.utils.Utils.cartesian;
 
 @RunWith(Parameterized.class)
 public class TestClimateChangingControlStrategy {
 
     private final static double HEATING_SET_POINT = 26.0;
     private final static double EPSILON = 0.0001;
+    private final static ZoneId TIME_ZONE = ZoneId.of("Europe/Paris");
+    private final static ZonedDateTime MONDAY_AM = ZonedDateTime.of(2017, 3, 13, 10, 0, 0, 0, TIME_ZONE);
+    private final static ZonedDateTime TUESDAY_PM = ZonedDateTime.of(2017, 3, 14, 16, 0, 0, 0, TIME_ZONE);
+    private final static ZonedDateTime SATURDAY_AM = ZonedDateTime.of(2017, 3, 11, 9, 0, 0, 0, TIME_ZONE);
+    private final static ZonedDateTime SUNDAY_PM = ZonedDateTime.of(2017, 3, 12, 15, 0, 0, 0, TIME_ZONE);
 
     private HeatingControlStrategy strategy;
     private PersonReference person1 = mock(PersonReference.class);
     private PersonReference person2 = mock(PersonReference.class);
     private Set<PersonReference> people;
 
+
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
-        List<Object[]> activityCrossProduct;
-        activityCrossProduct = new ArrayList<>();
-
-        Activity[] act = Activity.values();
-
-        Consumer<Activity> consumer = (Activity a1) -> activityCrossProduct.addAll(Arrays.stream(act)
-                .map(a2 -> new Activity[]{a1, a2})
-                .collect(Collectors.toList()));
-        Arrays.stream(act).forEach(consumer);
-        return activityCrossProduct;
+        Object[] activities = Activity.values();
+        Object[] timeStamps = new Object[]{MONDAY_AM, TUESDAY_PM, SATURDAY_AM, SUNDAY_PM};
+        return cartesian(activities, activities, timeStamps);
     }
 
     @Parameterized.Parameter
@@ -51,6 +51,9 @@ public class TestClimateChangingControlStrategy {
 
     @Parameterized.Parameter(1)
     public Activity activityPerson2;
+
+    @Parameterized.Parameter(2)
+    public ZonedDateTime timeStamp;
 
 
     @Before
@@ -69,13 +72,13 @@ public class TestClimateChangingControlStrategy {
 
     @Test
     public void returnsConstantHeatingSetPointWhenEmpty() {
-        double heatingSetPoint = this.strategy.heatingSetPoint(new HashSet<>()).get();
+        double heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, new HashSet<>()).get();
         assertThat(heatingSetPoint, is(closeTo(HEATING_SET_POINT, EPSILON)));
     }
 
     @Test
     public void returnsConstantHeatingSetPointNoMatterTheActivity() {
-        double heatingSetPoint = this.strategy.heatingSetPoint(this.people).get();
+        double heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, this.people).get();
         assertThat(heatingSetPoint, is(closeTo(HEATING_SET_POINT, EPSILON)));
     }
 
