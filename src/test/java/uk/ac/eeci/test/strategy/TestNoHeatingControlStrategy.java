@@ -25,13 +25,13 @@ public class TestNoHeatingControlStrategy extends StrategyTestBase {
     @Test
     public void returnsNoHeatingSetPointWhenEmpty() {
         Optional<Double> heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, new HashSet<>());
-        assertThat(heatingSetPoint.isPresent(), is(false));
+        assertThat(heatingSetPoint.isPresent(), is(equalTo(false)));
     }
 
     @Test
     public void returnsNoHeatingSetPointNoMatterTheActivity() {
         Optional<Double> heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, this.people);
-        assertThat(heatingSetPoint.isPresent(), is(false));
+        assertThat(heatingSetPoint.isPresent(), is(equalTo(false)));
     }
 
 }
