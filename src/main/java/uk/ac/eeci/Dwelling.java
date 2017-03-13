@@ -2,6 +2,7 @@ package uk.ac.eeci;
 
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -60,12 +61,12 @@ public class Dwelling {
     }
 
     private void step(double outsideTemperature) {
-        double heatingSetPoint = this.heatingControlStrategy.heatingSetPoint(this.peopleInDwelling);
+        Optional<Double> heatingSetPoint = this.heatingControlStrategy.heatingSetPoint(this.peopleInDwelling);
         Function<Double, Double> nextTemperature = thermalPower ->
                 this.nextTemperature(outsideTemperature, thermalPower);
         double noPower = 0.0;
         double nextTemperatureNoPower = nextTemperature.apply(noPower);
-        if (nextTemperatureNoPower >= heatingSetPoint) {
+        if (!heatingSetPoint.isPresent() || nextTemperatureNoPower >= heatingSetPoint.get()) {
             this.currentTemperature = nextTemperatureNoPower;
             this.currentThermalPower = noPower;
         }
@@ -73,7 +74,7 @@ public class Dwelling {
             double tenWattPowerSquareMeterPower = 10 * this.conditionedFloorArea;
             double nextTemperaturePower10 = nextTemperature.apply(tenWattPowerSquareMeterPower);
             double unrestrictedPower = (tenWattPowerSquareMeterPower *
-                    (heatingSetPoint - nextTemperatureNoPower) /
+                    (heatingSetPoint.get() - nextTemperatureNoPower) /
                     (nextTemperaturePower10 - nextTemperatureNoPower));
             double thermalPower;
             if (Math.abs(unrestrictedPower) <= Math.abs(this.maximumHeatingPower)) {

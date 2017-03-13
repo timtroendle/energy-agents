@@ -33,7 +33,7 @@ public class TestDwelling {
     public void setUp() {
         this.personInSet = new HashSet<>();
         this.personInSet.add(this.person);
-        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(21.9);
+        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(Optional.of(21.9));
         when(this.environment.getCurrentTemperature())
                 .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE));
         double conditionedFloorArea = 100;
@@ -102,11 +102,20 @@ public class TestDwelling {
 
     @Test
     public void testDwellingGetsHeatedWhenBelowHeatingSetPoint() {
-        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(23.0);
+        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(Optional.of(23.0));
         this.dwelling.step();
         assertThat(this.dwelling.getCurrentTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
         assertThat(this.dwelling.getCurrentTemperature(), is(lessThanOrEqualTo(23.0)));
         assertThat(this.dwelling.getCurrentThermalPower(), is(greaterThan(0.0)));
+    }
+
+    @Test
+    public void switchesOffHeatingSystemWithoutHeatingSetPoint() {
+        when(this.environment.getCurrentTemperature())
+                .thenReturn(CompletableFuture.completedFuture(0.0)); // it's cold outside!
+        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(Optional.empty());
+        this.dwelling.step();
+        assertThat(this.dwelling.getCurrentThermalPower(), is(closeTo(0.0, EPSILON)));
     }
 
     @Test

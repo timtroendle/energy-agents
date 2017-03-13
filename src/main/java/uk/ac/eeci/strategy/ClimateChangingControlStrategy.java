@@ -3,6 +3,7 @@ package uk.ac.eeci.strategy;
 import uk.ac.eeci.HeatingControlStrategy;
 import uk.ac.eeci.PersonReference;
 
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -23,8 +24,8 @@ public class ClimateChangingControlStrategy implements HeatingControlStrategy {
     }
 
     @Override
-    public double heatingSetPoint(Set<PersonReference> peopleInDwelling) {
-        return this.heatingSetPoint;
+    public Optional<Double> heatingSetPoint(Set<PersonReference> peopleInDwelling) {
+        return Optional.of(this.heatingSetPoint);
     }
 
 }

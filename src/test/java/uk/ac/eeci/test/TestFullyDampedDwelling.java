@@ -7,6 +7,7 @@ import uk.ac.eeci.EnvironmentReference;
 import uk.ac.eeci.HeatingControlStrategy;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.*;
@@ -36,7 +37,7 @@ public class TestFullyDampedDwelling {
 
     @Test
     public void testDwellingGetsHeatedWithMaxPowerWhenTooCold() {
-        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(23.0);
+        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(Optional.of(23.0));
         this.dwelling.step();
         assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(23, EPSILON)));
         assertThat(this.dwelling.getCurrentThermalPower(), is(closeTo(MAXIMUM_HEATING_POWER, EPSILON)));
@@ -44,7 +45,7 @@ public class TestFullyDampedDwelling {
 
     @Test
     public void testDwellingDoesNotExceedMaxHeatingPower() {
-        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(24.0);
+        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(Optional.of(24.0));
         this.dwelling.step();
         assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(23, EPSILON)));
         assertThat(this.dwelling.getCurrentThermalPower(), is(closeTo(MAXIMUM_HEATING_POWER, EPSILON)));

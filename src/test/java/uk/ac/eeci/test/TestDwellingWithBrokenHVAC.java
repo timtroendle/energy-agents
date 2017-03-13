@@ -5,6 +5,7 @@ import org.junit.Test;
 import uk.ac.eeci.*;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
@@ -25,7 +26,7 @@ public class TestDwellingWithBrokenHVAC {
 
     @Before
     public void setUp() {
-        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(20.0);
+        when(this.controlStrategy.heatingSetPoint(any())).thenReturn(Optional.of(20.0));
         when(this.environment.getCurrentTemperature()).thenReturn(INITIAL_DWELLING_TEMPERATURE);
         double conditionedFloorArea = 100;
         this.dwelling = new Dwelling(

@@ -69,13 +69,13 @@ public class TestClimateChangingControlStrategy {
 
     @Test
     public void returnsConstantHeatingSetPointWhenEmpty() {
-        double heatingSetPoint = this.strategy.heatingSetPoint(new HashSet<>());
+        double heatingSetPoint = this.strategy.heatingSetPoint(new HashSet<>()).get();
         assertThat(heatingSetPoint, is(closeTo(HEATING_SET_POINT, EPSILON)));
     }
 
     @Test
     public void returnsConstantHeatingSetPointNoMatterTheActivity() {
-        double heatingSetPoint = this.strategy.heatingSetPoint(this.people);
+        double heatingSetPoint = this.strategy.heatingSetPoint(this.people).get();
         assertThat(heatingSetPoint, is(closeTo(HEATING_SET_POINT, EPSILON)));
     }
 
