@@ -6,5 +6,4 @@ public interface HeatingControlStrategy {
 
     double heatingSetPoint(Set<PersonReference> peopleInDwelling);
 
-    double coolingSetPoint(Set<PersonReference> peopleInDwelling);
 }

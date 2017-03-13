@@ -72,9 +72,9 @@ public class TestUnheatedBuildings {
         List<Dwelling> dwellings = new ArrayList<>();
         double conditionedFloorArea = 100;
         for (int i = 0; i < 10; i++) {
-            Dwelling d = new Dwelling(165000 * conditionedFloorArea, 20000, Double.NEGATIVE_INFINITY,
+            Dwelling d = new Dwelling(165000 * conditionedFloorArea, 20000,
                     Double.POSITIVE_INFINITY, INITIAL_DWELLING_TEMPERATURE,
-                    conditionedFloorArea, TIME_STEP_SIZE, new ClimateChangingControlStrategy(0, 100),
+                    conditionedFloorArea, TIME_STEP_SIZE, new ClimateChangingControlStrategy(0),
                     this.environmentReference);
             dwellings.add(d);
         }

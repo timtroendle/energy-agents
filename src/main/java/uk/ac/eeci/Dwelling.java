@@ -12,7 +12,6 @@ public class Dwelling {
     private double currentThermalPower;
     private final double heatMassCapacity;
     private final double heatTransmission;
-    private final double maximumCoolingPower;
     private final double maximumHeatingPower;
     private final double conditionedFloorArea;
     private final HeatingControlStrategy heatingControlStrategy;
@@ -29,7 +28,6 @@ public class Dwelling {
      *
      * @param heatMassCapacity capacity of the dwelling's heat mass [J/K]
      * @param heatTransmission heat transmission to the outside [W/K]
-     * @param maximumCoolingPower [W] (<= 0)
      * @param maximumHeatingPower [W] (>= 0)
      * @param initialDwellingTemperature dwelling temperature at start time [℃]
      * @param conditionedFloorArea [m**2]
@@ -37,17 +35,15 @@ public class Dwelling {
      * @param timeStepSize the time step size of the dwelling simulation
      * @param environmentReference
      */
-    public Dwelling(double heatMassCapacity, double heatTransmission, double maximumCoolingPower,
+    public Dwelling(double heatMassCapacity, double heatTransmission,
                     double maximumHeatingPower, double initialDwellingTemperature,
                     double conditionedFloorArea, Duration timeStepSize,
                     HeatingControlStrategy controlStrategy, EnvironmentReference environmentReference) {
-        assert maximumCoolingPower <= 0;
         assert maximumHeatingPower >= 0;
         this.currentTemperature = initialDwellingTemperature;
         this.currentThermalPower = 0;
         this.heatMassCapacity = heatMassCapacity;
         this.heatTransmission = heatTransmission;
-        this.maximumCoolingPower = maximumCoolingPower;
         this.maximumHeatingPower = maximumHeatingPower;
         this.conditionedFloorArea = conditionedFloorArea;
         this.heatingControlStrategy = controlStrategy;
@@ -65,37 +61,26 @@ public class Dwelling {
 
     private void step(double outsideTemperature) {
         double heatingSetPoint = this.heatingControlStrategy.heatingSetPoint(this.peopleInDwelling);
-        double coolingSetPoint = this.heatingControlStrategy.coolingSetPoint(this.peopleInDwelling);
         Function<Double, Double> nextTemperature = thermalPower ->
                 this.nextTemperature(outsideTemperature, thermalPower);
         double noPower = 0.0;
         double nextTemperatureNoPower = nextTemperature.apply(noPower);
-        if (nextTemperatureNoPower >= heatingSetPoint && nextTemperatureNoPower <= coolingSetPoint) {
+        if (nextTemperatureNoPower >= heatingSetPoint) {
             this.currentTemperature = nextTemperatureNoPower;
             this.currentThermalPower = noPower;
         }
         else {
-            double setPoint;
-            double maxPower;
-            if (nextTemperatureNoPower < heatingSetPoint) {
-                setPoint = heatingSetPoint;
-                maxPower = this.maximumHeatingPower;
-            }
-            else {
-                setPoint = coolingSetPoint;
-                maxPower = this.maximumCoolingPower;
-            }
             double tenWattPowerSquareMeterPower = 10 * this.conditionedFloorArea;
             double nextTemperaturePower10 = nextTemperature.apply(tenWattPowerSquareMeterPower);
             double unrestrictedPower = (tenWattPowerSquareMeterPower *
-                    (setPoint - nextTemperatureNoPower) /
+                    (heatingSetPoint - nextTemperatureNoPower) /
                     (nextTemperaturePower10 - nextTemperatureNoPower));
             double thermalPower;
-            if (Math.abs(unrestrictedPower) <= Math.abs(maxPower)) {
+            if (Math.abs(unrestrictedPower) <= Math.abs(this.maximumHeatingPower)) {
                 thermalPower = unrestrictedPower;
             }
             else {
-                thermalPower = maxPower;
+                thermalPower = this.maximumHeatingPower;
             }
             this.currentTemperature = nextTemperature.apply(thermalPower);
             this.currentThermalPower = thermalPower;

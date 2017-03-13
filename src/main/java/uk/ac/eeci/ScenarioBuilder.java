@@ -27,7 +27,6 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_DW_HEAT_MASS_CAPACITY = "heatMassCapacity";
     public final static String SQL_COLUMNS_DW_HEAT_TRANSMISSION = "heatTransmission";
     public final static String SQL_COLUMNS_DW_INITIAL_TEMPERATURE = "initialTemperature";
-    public final static String SQL_COLUMNS_DW_MAX_COOLING_POWER = "maxCoolingPower";
     public final static String SQL_COLUMNS_DW_MAX_HEATING_POWER = "maxHeatingPower";
     public final static String SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA = "conditionedFloorArea";
     public final static String SQL_COLUMNS_PPL_DWELLING_ID = "dwellingId";
@@ -47,7 +46,7 @@ public class ScenarioBuilder {
     public final static String THERMAL_POWER_DATA_POINT_NAME = "thermalPower";
 
     public final static ZoneOffset TIME_ZONE = ZoneOffset.UTC;
-    public final static HeatingControlStrategy HEATING_CONTROL_STRATEGY = new ClimateChangingControlStrategy(20, 26);
+    public final static HeatingControlStrategy HEATING_CONTROL_STRATEGY = new ClimateChangingControlStrategy(20);
     // TODO heating strategy should come from input
 
     private static class SimulationParameter {
@@ -143,7 +142,6 @@ public class ScenarioBuilder {
                     new DwellingReference(new Dwelling(
                         rs.getDouble(SQL_COLUMNS_DW_HEAT_MASS_CAPACITY),
                         rs.getDouble(SQL_COLUMNS_DW_HEAT_TRANSMISSION),
-                        rs.getDouble(SQL_COLUMNS_DW_MAX_COOLING_POWER),
                         rs.getDouble(SQL_COLUMNS_DW_MAX_HEATING_POWER),
                         rs.getDouble(SQL_COLUMNS_DW_INITIAL_TEMPERATURE),
                         rs.getDouble(SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA),

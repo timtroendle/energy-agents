@@ -13,16 +13,13 @@ import java.util.Set;
 public class ClimateChangingControlStrategy implements HeatingControlStrategy {
 
     private final double heatingSetPoint;
-    private final double coolingSetPoint;
 
     /**
      *
      * @param heatingSetPoint The constant heating set point.
-     * @param coolingSetPoint The constant cooling set point.
      */
-    public ClimateChangingControlStrategy(double heatingSetPoint, double coolingSetPoint) {
+    public ClimateChangingControlStrategy(double heatingSetPoint) {
         this.heatingSetPoint = heatingSetPoint;
-        this.coolingSetPoint = coolingSetPoint;
     }
 
     @Override
@@ -30,8 +27,4 @@ public class ClimateChangingControlStrategy implements HeatingControlStrategy {
         return this.heatingSetPoint;
     }
 
-    @Override
-    public double coolingSetPoint(Set<PersonReference> peopleInDwelling) {
-        return this.coolingSetPoint;
-    }
 }

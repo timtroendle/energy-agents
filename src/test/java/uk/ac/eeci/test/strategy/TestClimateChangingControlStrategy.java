@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 public class TestClimateChangingControlStrategy {
 
     private final static double HEATING_SET_POINT = 26.0;
-    private final static double COOLING_SET_POINT = 20.0;
     private final static double EPSILON = 0.0001;
 
     private HeatingControlStrategy strategy;
@@ -56,7 +55,7 @@ public class TestClimateChangingControlStrategy {
 
     @Before
     public void setUp() {
-        this.strategy = new ClimateChangingControlStrategy(HEATING_SET_POINT, COOLING_SET_POINT);
+        this.strategy = new ClimateChangingControlStrategy(HEATING_SET_POINT);
         this.people = new HashSet<>();
         this.people.add(person1);
         this.people.add(person2);
@@ -75,21 +74,9 @@ public class TestClimateChangingControlStrategy {
     }
 
     @Test
-    public void returnsConstantCoolingSetPointWhenEmpty() {
-        double coolingSetPoint = this.strategy.coolingSetPoint(new HashSet<>());
-        assertThat(coolingSetPoint, is(closeTo(COOLING_SET_POINT, EPSILON)));
-    }
-
-    @Test
     public void returnsConstantHeatingSetPointNoMatterTheActivity() {
         double heatingSetPoint = this.strategy.heatingSetPoint(this.people);
         assertThat(heatingSetPoint, is(closeTo(HEATING_SET_POINT, EPSILON)));
-    }
-
-    @Test
-    public void returnsConstantCoolingSetPointNoMatterTheActivity() {
-        double coolingSetPoint = this.strategy.coolingSetPoint(this.people);
-        assertThat(coolingSetPoint, is(closeTo(COOLING_SET_POINT, EPSILON)));
     }
 
 }
