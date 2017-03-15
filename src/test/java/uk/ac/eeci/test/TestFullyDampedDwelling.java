@@ -4,7 +4,7 @@ import org.junit.Before;
 import org.junit.Test;
 import uk.ac.eeci.Dwelling;
 import uk.ac.eeci.EnvironmentReference;
-import uk.ac.eeci.HeatingControlStrategy;
+import uk.ac.eeci.HeatingControlStrategyReference;
 
 import java.time.Duration;
 import java.time.ZoneId;
@@ -26,7 +26,7 @@ public class TestFullyDampedDwelling {
     private final static ZonedDateTime INITIAL_TIME = ZonedDateTime.of(2017, 3, 13, 17, 40, 0, 0, ZoneId.of("Europe/Paris"));
     private double MAXIMUM_HEATING_POWER = +1;
     private Dwelling dwelling;
-    private HeatingControlStrategy controlStrategy = mock(HeatingControlStrategy.class);
+    private HeatingControlStrategyReference controlStrategy = mock(HeatingControlStrategyReference.class);
     private EnvironmentReference environmentReference = mock(EnvironmentReference.class);
 
     @Before
@@ -42,7 +42,8 @@ public class TestFullyDampedDwelling {
 
     @Test
     public void testDwellingGetsHeatedWithMaxPowerWhenTooCold() {
-        when(this.controlStrategy.heatingSetPoint(eq(INITIAL_TIME), any())).thenReturn(Optional.of(23.0));
+        when(this.controlStrategy.heatingSetPoint(eq(INITIAL_TIME), any()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(23.0)));
         this.dwelling.step();
         assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(23, EPSILON)));
         assertThat(this.dwelling.getCurrentThermalPower(), is(closeTo(MAXIMUM_HEATING_POWER, EPSILON)));
@@ -50,7 +51,8 @@ public class TestFullyDampedDwelling {
 
     @Test
     public void testDwellingDoesNotExceedMaxHeatingPower() {
-        when(this.controlStrategy.heatingSetPoint(eq(INITIAL_TIME), any())).thenReturn(Optional.of(24.0));
+        when(this.controlStrategy.heatingSetPoint(eq(INITIAL_TIME), any()))
+                .thenReturn(CompletableFuture.completedFuture(Optional.of(24.0)));
         this.dwelling.step();
         assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(23, EPSILON)));
         assertThat(this.dwelling.getCurrentThermalPower(), is(closeTo(MAXIMUM_HEATING_POWER, EPSILON)));

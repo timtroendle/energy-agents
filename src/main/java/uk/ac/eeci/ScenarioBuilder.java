@@ -111,7 +111,6 @@ public class ScenarioBuilder {
     }
 
     private static LocalTime readLocalTime(ResultSet rs, String columnName) throws SQLException {
-        //return rs.getTime(columnName, Calendar.getInstance(TimeZone.getTimeZone("UTC"))).toLocalTime();
         return LocalTime.parse(rs.getString(columnName), DateTimeFormatter.ISO_LOCAL_TIME);
     }
 
@@ -119,9 +118,7 @@ public class ScenarioBuilder {
         TimeSeries<Double> temperatureTimeSeries = new TimeSeries<>();
         Statement stat = conn.createStatement();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", SQL_TABLES_ENVIRONMENT));
-        List<Instant> timestamps = new ArrayList<>();
         while (rs.next()) {
-            timestamps.add(rs.getTimestamp(SQL_COLUMNS_ENV_INDEX).toInstant());
             ZonedDateTime timeStamp = readTimeStamp(rs, SQL_COLUMNS_ENV_INDEX);
             Double value = rs.getDouble(SQL_COLUMNS_ENV_TEMPERATURE);
             temperatureTimeSeries.add(timeStamp, value);
@@ -148,7 +145,7 @@ public class ScenarioBuilder {
                         rs.getDouble(SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA),
                         parameters.initialTime,
                         parameters.timeStepSize,
-                        HEATING_CONTROL_STRATEGY,
+                        new HeatingControlStrategyReference(HEATING_CONTROL_STRATEGY),
                         env
                     ))
             );

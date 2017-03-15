@@ -3,6 +3,7 @@ package uk.ac.eeci;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A control strategy for the heating system of dwellings.
@@ -13,7 +14,8 @@ import java.util.Set;
  * occupy the dwelling at the current moment, but doesn't have to.
  *
  */
-public interface HeatingControlStrategy {
+public abstract class HeatingControlStrategy {
+    // should rather be an interface, but due to the reference mechanism must be an abstract class
 
     /**
      * Determines the current heating set point for the heating system of a dwelling.
@@ -24,6 +26,7 @@ public interface HeatingControlStrategy {
      *         which case a switch off of the heating system is demanded,
      *         should it be turned on.
      */
-    Optional<Double> heatingSetPoint(ZonedDateTime timeStamp, Set<PersonReference> peopleInDwelling);
+    public abstract CompletableFuture<Optional<Double>> heatingSetPoint(ZonedDateTime timeStamp,
+                                                                        Set<PersonReference> peopleInDwelling);
 
 }

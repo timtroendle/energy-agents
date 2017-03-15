@@ -17,7 +17,7 @@ public class Dwelling {
     private final double heatTransmission;
     private final double maximumHeatingPower;
     private final double conditionedFloorArea;
-    private final HeatingControlStrategy heatingControlStrategy;
+    private final HeatingControlStrategyReference heatingControlStrategy;
     private final EnvironmentReference environmentReference;
     private final Set<PersonReference> peopleInDwelling;
     private final Duration timeStepSize;
@@ -34,7 +34,7 @@ public class Dwelling {
      * @param maximumHeatingPower [W] (>= 0)
      * @param initialDwellingTemperature dwelling temperature at start time [℃]
      * @param conditionedFloorArea [m**2]
-     * @param controlStrategy the heating control strategy applied in this dwelling
+     * @param controlStrategyReference the heating control strategy applied in this dwelling
      * @param initialTime the initial time of the simulation
      * @param timeStepSize the time step size of the dwelling simulation
      * @param environmentReference
@@ -42,7 +42,8 @@ public class Dwelling {
     public Dwelling(double heatMassCapacity, double heatTransmission,
                     double maximumHeatingPower, double initialDwellingTemperature,
                     double conditionedFloorArea, ZonedDateTime initialTime, Duration timeStepSize,
-                    HeatingControlStrategy controlStrategy, EnvironmentReference environmentReference) {
+                    HeatingControlStrategyReference controlStrategyReference,
+                    EnvironmentReference environmentReference) {
         assert maximumHeatingPower >= 0;
         this.currentTemperature = initialDwellingTemperature;
         this.currentThermalPower = 0;
@@ -50,7 +51,7 @@ public class Dwelling {
         this.heatTransmission = heatTransmission;
         this.maximumHeatingPower = maximumHeatingPower;
         this.conditionedFloorArea = conditionedFloorArea;
-        this.heatingControlStrategy = controlStrategy;
+        this.heatingControlStrategy = controlStrategyReference;
         this.timeStepSize = timeStepSize;
         this.currentTime = initialTime;
         this.peopleInDwelling = new HashSet<>();
@@ -61,12 +62,12 @@ public class Dwelling {
      * Performs dwelling simulation for the next time step.
      */
     public CompletableFuture<Void> step() {
-        return this.environmentReference.getCurrentTemperature().thenAccept(this::step);
+        return this.environmentReference.getCurrentTemperature()
+                .thenAcceptBoth(this.heatingControlStrategy.heatingSetPoint(this.currentTime, this.peopleInDwelling),
+                        (temp, setPoint) -> this.step(setPoint, temp));
     }
 
-    private void step(double outsideTemperature) {
-        Optional<Double> heatingSetPoint = this.heatingControlStrategy.heatingSetPoint(this.currentTime,
-                                                                                       this.peopleInDwelling);
+    private void step(Optional<Double> heatingSetPoint, double outsideTemperature) {
         Function<Double, Double> nextTemperature = thermalPower ->
                 this.nextTemperature(outsideTemperature, thermalPower);
         double noPower = 0.0;

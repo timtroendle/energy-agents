@@ -74,7 +74,8 @@ public class TestUnheatedBuildings {
         for (int i = 0; i < 10; i++) {
             Dwelling d = new Dwelling(165000 * conditionedFloorArea, 20000,
                     Double.POSITIVE_INFINITY, INITIAL_DWELLING_TEMPERATURE,
-                    conditionedFloorArea, INITIAL_TIME, TIME_STEP_SIZE, new ClimateChangingControlStrategy(0),
+                    conditionedFloorArea, INITIAL_TIME, TIME_STEP_SIZE,
+                    new HeatingControlStrategyReference(new ClimateChangingControlStrategy(0)),
                     this.environmentReference);
             dwellings.add(d);
         }

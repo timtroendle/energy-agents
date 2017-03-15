@@ -8,6 +8,7 @@ import uk.ac.eeci.strategy.NoHeatingStrategy;
 
 import java.util.HashSet;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
@@ -23,14 +24,14 @@ public class TestNoHeatingControlStrategy extends StrategyTestBase {
 
 
     @Test
-    public void returnsNoHeatingSetPointWhenEmpty() {
-        Optional<Double> heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, new HashSet<>());
+    public void returnsNoHeatingSetPointWhenEmpty() throws ExecutionException, InterruptedException {
+        Optional<Double> heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, new HashSet<>()).get();
         assertThat(heatingSetPoint.isPresent(), is(equalTo(false)));
     }
 
     @Test
-    public void returnsNoHeatingSetPointNoMatterTheActivity() {
-        Optional<Double> heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, this.people);
+    public void returnsNoHeatingSetPointNoMatterTheActivity() throws ExecutionException, InterruptedException {
+        Optional<Double> heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, this.people).get();
         assertThat(heatingSetPoint.isPresent(), is(equalTo(false)));
     }
 

@@ -10,6 +10,7 @@ import static org.junit.Assert.*;
 import static org.hamcrest.Matchers.*;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 
 @RunWith(Parameterized.class)
@@ -25,14 +26,14 @@ public class TestClimateChangingControlStrategy extends StrategyTestBase {
     }
 
     @Test
-    public void returnsConstantHeatingSetPointWhenEmpty() {
-        double heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, new HashSet<>()).get();
+    public void returnsConstantHeatingSetPointWhenEmpty() throws ExecutionException, InterruptedException {
+        double heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, new HashSet<>()).get().get();
         assertThat(heatingSetPoint, is(closeTo(HEATING_SET_POINT, EPSILON)));
     }
 
     @Test
-    public void returnsConstantHeatingSetPointNoMatterTheActivity() {
-        double heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, this.people).get();
+    public void returnsConstantHeatingSetPointNoMatterTheActivity() throws ExecutionException, InterruptedException {
+        double heatingSetPoint = this.strategy.heatingSetPoint(this.timeStamp, this.people).get().get();
         assertThat(heatingSetPoint, is(closeTo(HEATING_SET_POINT, EPSILON)));
     }
 

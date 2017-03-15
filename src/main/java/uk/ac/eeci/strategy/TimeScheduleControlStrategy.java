@@ -11,8 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
-public class TimeScheduleControlStrategy implements HeatingControlStrategy {
+public class TimeScheduleControlStrategy extends HeatingControlStrategy {
 
     public enum DayOfWeek {
         WEEKDAY, WEEKEND;
@@ -71,13 +72,13 @@ public class TimeScheduleControlStrategy implements HeatingControlStrategy {
     }
 
     @Override
-    public Optional<Double> heatingSetPoint(ZonedDateTime timeStamp, Set<PersonReference> peopleInDwelling) {
+    public CompletableFuture<Optional<Double>> heatingSetPoint(ZonedDateTime timeStamp, Set<PersonReference> peopleInDwelling) {
         Optional<TimeSlot> currentTimeSlot = this.chooseCurrentTimeSlot(timeStamp);
         if (currentTimeSlot.isPresent()) {
-            return Optional.of(currentTimeSlot.get().heatingSetPoint);
+            return CompletableFuture.completedFuture(Optional.of(currentTimeSlot.get().heatingSetPoint));
         }
         else {
-            return Optional.empty();
+            return CompletableFuture.completedFuture(Optional.empty());
         }
     }
 

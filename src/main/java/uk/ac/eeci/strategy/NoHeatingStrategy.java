@@ -6,12 +6,14 @@ import uk.ac.eeci.PersonReference;
 import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
-public class NoHeatingStrategy implements HeatingControlStrategy {
+public class NoHeatingStrategy extends HeatingControlStrategy {
 
 
     @Override
-    public Optional<Double> heatingSetPoint(ZonedDateTime timeStamp, Set<PersonReference> peopleInDwelling) {
-        return Optional.empty();
+    public CompletableFuture<Optional<Double>> heatingSetPoint(ZonedDateTime timeStamp,
+                                                               Set<PersonReference> peopleInDwelling) {
+        return CompletableFuture.completedFuture(Optional.empty());
     }
 }
