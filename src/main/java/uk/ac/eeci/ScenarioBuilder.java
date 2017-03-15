@@ -1,7 +1,8 @@
 package uk.ac.eeci;
 
-import uk.ac.eeci.strategy.ClimateChangingControlStrategy;
 import uk.ac.eeci.Person.Activity;
+import uk.ac.eeci.strategy.HeatingControlStrategyFactory;
+import uk.ac.eeci.strategy.HeatingControlStrategyFactory.ControlStrategyType;
 
 import java.sql.*;
 import java.time.*;
@@ -21,6 +22,12 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_PAR_TIME_STEP_SIZE = "timeStepSize_in_min";
     public final static String SQL_COLUMNS_PAR_NUMBER_TIME_STEPS = "numberTimeSteps";
     public final static String SQL_COLUMNS_PAR_RANDOM_SEED = "randomSeed";
+    public final static String SQL_COLUMNS_PAR_SET_POINT_WHILE_HOME = "setPointWhileHome";
+    public final static String SQL_COLUMNS_PAR_SET_POINT_WHILE_ASLEEP = "setPointWhileAsleep";
+    public final static String SQL_COLUMNS_PAR_WAKE_UP_TIME = "wakeUpTime";
+    public final static String SQL_COLUMNS_PAR_LEAVE_HOME_TIME = "leaveHomeTime";
+    public final static String SQL_COLUMNS_PAR_COME_HOME_TIME = "comeHomeTime";
+    public final static String SQL_COLUMNS_PAR_BED_TIME = "bedTime";
     public final static String SQL_COLUMNS_ENV_INDEX = "index";
     public final static String SQL_COLUMNS_ENV_TEMPERATURE = "temperature";
     public final static String SQL_COLUMNS_DW_INDEX = "index";
@@ -29,6 +36,7 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_DW_INITIAL_TEMPERATURE = "initialTemperature";
     public final static String SQL_COLUMNS_DW_MAX_HEATING_POWER = "maxHeatingPower";
     public final static String SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA = "conditionedFloorArea";
+    public final static String SQL_COLUMNS_DW_HEATING_CONTROL_STRATEGY = "heatingControlStrategy";
     public final static String SQL_COLUMNS_PPL_DWELLING_ID = "dwellingId";
     public final static String SQL_COLUMNS_PPL_MARKOV_ID = "markovChainId";
     public final static String SQL_COLUMNS_PPL_INITIAL_ACTIVITY = "initialActivity";
@@ -46,8 +54,6 @@ public class ScenarioBuilder {
     public final static String THERMAL_POWER_DATA_POINT_NAME = "thermalPower";
 
     public final static ZoneOffset TIME_ZONE = ZoneOffset.UTC;
-    public final static HeatingControlStrategy HEATING_CONTROL_STRATEGY = new ClimateChangingControlStrategy(20);
-    // TODO heating strategy should come from input
 
     private static class SimulationParameter {
 
@@ -89,8 +95,10 @@ public class ScenarioBuilder {
     private static CitySimulation readScenario(Connection con, String inputPath, String outputPath)
             throws SQLException {
         SimulationParameter parameters = readSimulationParameters(con);
+        HeatingControlStrategyFactory heatingControlStrategyFactory = readHeatingControlStrategyFactory(con);
         EnvironmentReference environmentReference = readEnvironment(con, parameters.timeStepSize);
-        Map<Integer, DwellingReference> dwellingReferences = readDwellings(con, parameters, environmentReference);
+        Map<Integer, DwellingReference> dwellingReferences = readDwellings(con, parameters, environmentReference,
+                heatingControlStrategyFactory);
         Map<Integer, PersonReference> peopleReferences = readPeople(con, dwellingReferences, parameters);
         DataLoggerReference dataLoggerReference = createDataLogger(dwellingReferences, peopleReferences, inputPath, outputPath);
         return new CitySimulation(
@@ -114,6 +122,10 @@ public class ScenarioBuilder {
         return LocalTime.parse(rs.getString(columnName), DateTimeFormatter.ISO_LOCAL_TIME);
     }
 
+    private static ControlStrategyType readControlStrategyType(ResultSet rs, String columnName) throws SQLException {
+        return ControlStrategyType.valueOf(rs.getString(columnName));
+    }
+
     private static EnvironmentReference readEnvironment(Connection conn, Duration timeStepSize) throws SQLException {
         TimeSeries<Double> temperatureTimeSeries = new TimeSeries<>();
         Statement stat = conn.createStatement();
@@ -129,7 +141,8 @@ public class ScenarioBuilder {
     }
 
     private static Map<Integer, DwellingReference> readDwellings(Connection conn, SimulationParameter parameters,
-                                                                 EnvironmentReference env)
+                                                                 EnvironmentReference env,
+                                                                 HeatingControlStrategyFactory controlStrategyFactory)
             throws SQLException {
         Map<Integer, DwellingReference> dwellings = new HashMap<>();
         Statement stat = conn.createStatement();
@@ -145,7 +158,9 @@ public class ScenarioBuilder {
                         rs.getDouble(SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA),
                         parameters.initialTime,
                         parameters.timeStepSize,
-                        new HeatingControlStrategyReference(HEATING_CONTROL_STRATEGY),
+                        new HeatingControlStrategyReference(controlStrategyFactory.build(
+                                readControlStrategyType(rs, SQL_COLUMNS_DW_HEATING_CONTROL_STRATEGY))
+                        ),
                         env
                     ))
             );
@@ -248,6 +263,29 @@ public class ScenarioBuilder {
             throw new SQLException(msg);
         }
         return parameters.get(0); // there could be more, but at the moment don't care
+    }
+
+    private static HeatingControlStrategyFactory readHeatingControlStrategyFactory(Connection conn) throws SQLException {
+        List<HeatingControlStrategyFactory> factories = new ArrayList<>();
+        Statement stat = conn.createStatement();
+        ResultSet rs = stat.executeQuery(String.format("select * from %s;", SQL_TABLES_PARAMETERS));
+        while (rs.next()) {
+            factories.add(new HeatingControlStrategyFactory(
+                    rs.getDouble(SQL_COLUMNS_PAR_SET_POINT_WHILE_HOME),
+                    rs.getDouble(SQL_COLUMNS_PAR_SET_POINT_WHILE_ASLEEP),
+                    readLocalTime(rs, SQL_COLUMNS_PAR_WAKE_UP_TIME),
+                    readLocalTime(rs, SQL_COLUMNS_PAR_LEAVE_HOME_TIME),
+                    readLocalTime(rs, SQL_COLUMNS_PAR_COME_HOME_TIME),
+                    readLocalTime(rs, SQL_COLUMNS_PAR_BED_TIME),
+                    TIME_ZONE
+            ));
+        }
+        rs.close();
+        if (factories.size() < 1) {
+            String msg = String.format("Simulation parameter missing in table %s.", SQL_TABLES_PARAMETERS);
+            throw new SQLException(msg);
+        }
+        return factories.get(0); // there could be more, but at the moment don't care
     }
 
     private static DataLoggerReference createDataLogger(Map<Integer, DwellingReference> dwellings,
