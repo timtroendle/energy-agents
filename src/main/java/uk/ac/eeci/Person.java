@@ -16,12 +16,20 @@ public class Person {
         HOME, SLEEP_AT_HOME, OTHER_HOME, SLEEP_AT_OTHER_HOME, NOT_AT_HOME;
     }
 
-    private final static Set<Activity> HOME_ACTIVITIES;
+    public final static Set<Activity> HOME_ACTIVITIES;
+    public final static Set<Activity> SLEEP_ACTIVITIES;
+    private final static Set<Activity> OWN_HOME_ACTIVITIES;
 
     static {
-        HOME_ACTIVITIES = new HashSet<>();
-        HOME_ACTIVITIES.add(Activity.HOME);
-        HOME_ACTIVITIES.add(Activity.SLEEP_AT_HOME);
+        OWN_HOME_ACTIVITIES = new HashSet<>();
+        OWN_HOME_ACTIVITIES.add(Activity.HOME);
+        OWN_HOME_ACTIVITIES.add(Activity.SLEEP_AT_HOME);
+        SLEEP_ACTIVITIES = new HashSet<>();
+        SLEEP_ACTIVITIES.add(Activity.SLEEP_AT_HOME);
+        SLEEP_ACTIVITIES.add(Activity.SLEEP_AT_OTHER_HOME);
+        HOME_ACTIVITIES = new HashSet<>(OWN_HOME_ACTIVITIES);
+        HOME_ACTIVITIES.add(Activity.OTHER_HOME);
+        HOME_ACTIVITIES.add(Activity.SLEEP_AT_OTHER_HOME);
     }
 
     private final HeterogeneousMarkovChain<Activity> markovChain;
@@ -71,10 +79,10 @@ public class Person {
     }
 
     private void updateLocation() {
-        if (this.atHome && !HOME_ACTIVITIES.contains(this.currentActivity)) {
+        if (this.atHome && !OWN_HOME_ACTIVITIES.contains(this.currentActivity)) {
             this.atHome = false;
             this.home.leave(this.reference);
-        } else if (!this.atHome && HOME_ACTIVITIES.contains(this.currentActivity)) {
+        } else if (!this.atHome && OWN_HOME_ACTIVITIES.contains(this.currentActivity)) {
             this.atHome = true;
             this.home.enter(this.reference);
         }
