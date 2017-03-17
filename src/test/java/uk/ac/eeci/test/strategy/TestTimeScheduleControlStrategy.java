@@ -11,7 +11,7 @@ import uk.ac.eeci.strategy.TimeScheduleControlStrategy;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static uk.ac.eeci.strategy.TimeScheduleControlStrategy.DayOfWeek.*;
+import static uk.ac.eeci.strategy.TimeScheduleControlStrategy.DayType.*;
 
 import java.time.Duration;
 import java.time.LocalTime;
@@ -34,7 +34,7 @@ public class TestTimeScheduleControlStrategy {
     private final static ZonedDateTime MONDAY_PM = ZonedDateTime.of(2017, 3, 13, 16, 0, 0, 0, TIME_ZONE);
     private final static ZonedDateTime SATURDAY_AM = ZonedDateTime.of(2017, 3, 11, 9, 0, 0, 0, TIME_ZONE);
     private final static ZonedDateTime SATURDAY_PM = ZonedDateTime.of(2017, 3, 11, 15, 0, 0, 0, TIME_ZONE);
-    private final static double WEEKDAY_AM_SET_POINT = 0.0;
+    private final static double WEEKDAY_AM_SET_POINT = 6.0;
     private final static double WEEKDAY_PM_SET_POINT = 12.0;
     private final static double WEEKEND_SET_POINT = 18.0;
 
@@ -71,25 +71,23 @@ public class TestTimeScheduleControlStrategy {
                 WEEKEND, LocalTime.MIDNIGHT, LocalTime.MIDNIGHT, WEEKEND_SET_POINT
         ));
         this.strategy = new TimeScheduleControlStrategy(timeSlots, TIME_ZONE);
-        this.people = new HashSet<>();
     }
 
     private void setUpPeopleAndTheirActivities() {
         this.people = new HashSet<>();
         this.people.add(person1);
         this.people.add(person2);
-        CompletableFuture<Person.Activity> activityPerson1 = new CompletableFuture<>();
-        CompletableFuture<Person.Activity> activityPerson2 = new CompletableFuture<>();
-        activityPerson1.complete(this.activityPerson1);
-        activityPerson2.complete(this.activityPerson2);
+        CompletableFuture<Person.Activity> activityPerson1 = CompletableFuture.completedFuture(this.activityPerson1);
+        CompletableFuture<Person.Activity> activityPerson2 = CompletableFuture.completedFuture(this.activityPerson2);
         when(this.person1.getCurrentActivity()).thenReturn(activityPerson1);
         when(this.person2.getCurrentActivity()).thenReturn(activityPerson2);
     }
 
-    @Test
-    public void demandsSwitchOffWithoutRules() throws ExecutionException, InterruptedException {
-        this.strategy = new TimeScheduleControlStrategy(new ArrayList<>(), TIME_ZONE);
-        assertThat(this.strategy.heatingSetPoint(MONDAY_AM, this.people).get(), is(equalTo(Optional.empty())));
+    @Test(expected=IllegalArgumentException.class)
+    public void invalidTimeSlotsAreRejected() {
+        new TimeScheduleControlStrategy.TimeSlot(
+                WEEKDAY, LocalTime.NOON, LocalTime.NOON.minusHours(1), WEEKDAY_PM_SET_POINT
+        );
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -105,6 +103,12 @@ public class TestTimeScheduleControlStrategy {
     }
 
     @Test
+    public void demandsSwitchOffWithoutTimeSlots() throws ExecutionException, InterruptedException {
+        this.strategy = new TimeScheduleControlStrategy(new ArrayList<>(), TIME_ZONE);
+        assertThat(this.strategy.heatingSetPoint(MONDAY_AM, this.people).get(), is(equalTo(Optional.empty())));
+    }
+
+    @Test
     public void setPointMondayAM() throws ExecutionException, InterruptedException {
         assertThat(this.strategy.heatingSetPoint(MONDAY_AM, this.people).get(),
                 is(equalTo(Optional.of(WEEKDAY_AM_SET_POINT))));
@@ -112,7 +116,7 @@ public class TestTimeScheduleControlStrategy {
 
     @Test
     public void noSetPointMondayNoon() throws ExecutionException, InterruptedException {
-        assertThat(this.strategy.heatingSetPoint(MONDAY_NOON, this.people).get().isPresent(), is(equalTo(false)));
+        assertThat(this.strategy.heatingSetPoint(MONDAY_NOON, this.people).get(), is(equalTo(Optional.empty())));
     }
 
     @Test
@@ -129,14 +133,14 @@ public class TestTimeScheduleControlStrategy {
 
     @Test
     public void setPointThursdayPM() throws ExecutionException, InterruptedException {
-        assertThat(this.strategy.heatingSetPoint(MONDAY_PM.plus(Duration.ofDays(2)), this.people).get(),
+        assertThat(this.strategy.heatingSetPoint(MONDAY_PM.plus(Duration.ofDays(3)), this.people).get(),
                 is(equalTo(Optional.of(WEEKDAY_PM_SET_POINT))));
     }
 
     @Test
     public void noSetPointFridayNoon() throws ExecutionException, InterruptedException {
-        assertThat(this.strategy.heatingSetPoint(MONDAY_NOON.plus(Duration.ofDays(4)), this.people).get().isPresent(),
-                is(equalTo(false)));
+        assertThat(this.strategy.heatingSetPoint(MONDAY_NOON.plus(Duration.ofDays(4)), this.people).get(),
+                is(equalTo(Optional.empty())));
     }
 
     @Test

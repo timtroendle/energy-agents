@@ -2,7 +2,7 @@ package uk.ac.eeci.strategy;
 
 import uk.ac.eeci.HeatingControlStrategy;
 import uk.ac.eeci.strategy.TimeScheduleControlStrategy.TimeSlot;
-import static uk.ac.eeci.strategy.TimeScheduleControlStrategy.DayOfWeek.*;
+import static uk.ac.eeci.strategy.TimeScheduleControlStrategy.DayType.*;
 
 import java.time.LocalTime;
 import java.time.ZoneId;
