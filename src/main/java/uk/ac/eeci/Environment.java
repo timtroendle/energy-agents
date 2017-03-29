@@ -6,7 +6,8 @@ import java.util.Optional;
 public class Environment {
 
     private final TimeSeries<Double> temperatureTimeSeries;
-    private int index = 0;
+    private int index;
+    private double currentTemperature;
 
     public Environment(TimeSeries<Double> temperatureTimeSeries, Duration timeStepSize) {
         this.temperatureTimeSeries = temperatureTimeSeries;
@@ -18,13 +19,17 @@ public class Environment {
             );
             throw new IllegalArgumentException(msg);
         }
+        this.index = 0;
+        this.currentTemperature = this.temperatureTimeSeries.get(this.index).getValue1();
+
     }
 
     public void step() {
         this.index += 1;
+        this.currentTemperature = this.temperatureTimeSeries.get(this.index).getValue1();
     }
 
     public double getCurrentTemperature() {
-        return temperatureTimeSeries.getValues().get(this.index);
+        return this.currentTemperature;
     }
 }
