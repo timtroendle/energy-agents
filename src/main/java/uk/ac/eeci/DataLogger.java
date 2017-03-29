@@ -96,10 +96,10 @@ public class DataLogger {
                     }
                     prep.addBatch();
                 }
+                conn.setAutoCommit(false);
+                prep.executeBatch();
+                conn.setAutoCommit(true);
             }
-            conn.setAutoCommit(false);
-            prep.executeBatch();
-            conn.setAutoCommit(true);
         }
     }
 
