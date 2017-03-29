@@ -1,31 +1,31 @@
 package uk.ac.eeci;
 
-import org.javatuples.Pair;
-
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.*;
 
-public class TimeSeries<K> extends ArrayList<Pair<ZonedDateTime, K>> {
+public class TimeSeries<K> {
+
+    private List<ZonedDateTime> index;
+    private List<K> values;
+
+    public TimeSeries() {
+        this.index = new ArrayList<>();
+        this.values = new ArrayList<>();
+    }
 
     public void add(ZonedDateTime timeStamp, K value) {
-        this.add(new Pair<>(timeStamp, value));
+        this.index.add(timeStamp);
+        this.values.add(value);
     }
 
     public List<K> getValues() {
-        return this.stream()
-                .map(Pair<ZonedDateTime, K>::getValue1)
-                .collect(Collectors.toList());
+        return this.values;
     }
 
     public List<ZonedDateTime> getIndex() {
-        return this.stream()
-                .map(Pair<ZonedDateTime, K>::getValue0)
-                .collect(Collectors.toList());
+        return this.index;
     }
 
     public Optional<Duration> getConstantTimeStepSize() {
@@ -42,4 +42,9 @@ public class TimeSeries<K> extends ArrayList<Pair<ZonedDateTime, K>> {
         }
         return Optional.of(reference);
     }
+
+    public int size() {
+        return this.index.size();
+    }
+
 }

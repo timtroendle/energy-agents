@@ -66,8 +66,8 @@ public class TestDataPoint {
     public void recordContainsEmptyTimeSeriesBeforeStepping() {
         Map<Integer, TimeSeries<Double>> record = this.dataPoint.getRecord();
 
-        assertThat(record.get(1), is(equalTo(new TimeSeries<>())));
-        assertThat(record.get(2), is(equalTo(new TimeSeries<>())));
+        assertThat(record.get(1).size(), is(equalTo(0)));
+        assertThat(record.get(2).size(), is(equalTo(0)));
     }
 
     @Test

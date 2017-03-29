@@ -20,13 +20,13 @@ public class Environment {
             throw new IllegalArgumentException(msg);
         }
         this.index = 0;
-        this.currentTemperature = this.temperatureTimeSeries.get(this.index).getValue1();
+        this.currentTemperature = this.temperatureTimeSeries.getValues().get(this.index);
 
     }
 
     public void step() {
         this.index += 1;
-        this.currentTemperature = this.temperatureTimeSeries.get(this.index).getValue1();
+        this.currentTemperature = this.temperatureTimeSeries.getValues().get(this.index);
     }
 
     public double getCurrentTemperature() {

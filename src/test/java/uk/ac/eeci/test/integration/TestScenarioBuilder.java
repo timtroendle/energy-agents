@@ -177,7 +177,7 @@ public class TestScenarioBuilder {
                     .map(entry -> new Pair<>(entry.getValue1(), entry.getValue2()))
                     .collect(Collectors.toList());
             for (Pair<ZonedDateTime, Double> timeSeriesEntry : timeSeriesEntries) {
-                indexTimeSeries.add(timeSeriesEntry);
+                indexTimeSeries.add(timeSeriesEntry.getValue0(), timeSeriesEntry.getValue1());
             }
         }
         return timeSeries;
@@ -212,7 +212,7 @@ public class TestScenarioBuilder {
                     .map(entry -> new Pair<>(entry.getValue1(), entry.getValue2()))
                     .collect(Collectors.toList());
             for (Pair<ZonedDateTime, Double> timeSeriesEntry : timeSeriesEntries) {
-                indexTimeSeries.add(timeSeriesEntry);
+                indexTimeSeries.add(timeSeriesEntry.getValue0(), timeSeriesEntry.getValue1());
             }
         }
         return timeSeries;
@@ -247,7 +247,7 @@ public class TestScenarioBuilder {
                     .map(entry -> new Pair<>(entry.getValue1(), entry.getValue2()))
                     .collect(Collectors.toList());
             for (Pair<ZonedDateTime, String> timeSeriesEntry : timeSeriesEntries) {
-                indexTimeSeries.add(timeSeriesEntry);
+                indexTimeSeries.add(timeSeriesEntry.getValue0(), timeSeriesEntry.getValue1());
             }
         }
         return timeSeries;
