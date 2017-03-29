@@ -55,7 +55,6 @@ public class CommandLineInterface {
     private void run() {
         logger.info(String.format("Hi there. This is %s version %s.", TOOL_NAME, CitySimulation.inferModelVersion()));
         logTempFileName();
-        Reference.pool = new WorkerPool(4); // FIXME shouldnt be here
         Reference.pool.setCurrentExecutor(Reference.pool.main); // FIXME shouldnt be here
         logger.info(String.format("Attempting to read scenario description from file %s.", this.inputFilePath));
         CitySimulation citySimulation = ScenarioBuilder.readScenario(this.inputFilePath, this.outputFilePath);
