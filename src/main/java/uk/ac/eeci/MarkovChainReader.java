@@ -53,13 +53,12 @@ public abstract class MarkovChainReader {
      *
      * @param reader a reader of input stream
      * @param timeStepSize the time step size of the markov chain
-     * @param seed the seed for the markov chain
      * @param timeZone the time zone of the markov chain
      * @return the read {@link HeterogeneousMarkovChain}
      * @throws IOException for all sorts of io issues
      */
     public static HeterogeneousMarkovChain<Activity> readMarkovChainFromFile(Reader reader, Duration timeStepSize,
-                                                                             long seed, ZoneId timeZone) throws IOException {
+                                                                             ZoneId timeZone) throws IOException {
         List<CSVRecord> list = new CSVParser(reader, CSVFormat.DEFAULT).getRecords();
         CSVRecord header = list.get(0);
         if (header.size() != 5) {
@@ -77,12 +76,11 @@ public abstract class MarkovChainReader {
                         toActivityColumnIndex, probabilityColumnIndex))
                 .collect(Collectors.toList());
 
-        return buildMarkovChainFromEntries(entries, timeStepSize, seed, timeZone);
+        return buildMarkovChainFromEntries(entries, timeStepSize, timeZone);
     }
 
     static HeterogeneousMarkovChain<Activity> buildMarkovChainFromEntries(List<MarkovChainEntry> entries,
                                                                           Duration timeStepSize,
-                                                                          long seed,
                                                                           ZoneId timeZone) {
         Map<String, Map<LocalTime, MarkovChain<Activity>>> chain = new HashMap<>();
         String[] days = {"weekday", "weekend"};
@@ -95,7 +93,7 @@ public abstract class MarkovChainReader {
                         .filter(entry -> entry.timeOfDay.equals(time))
                         .forEach(entry -> probabilities.put(new Pair<>(entry.fromActivity, entry.toActivity),
                                 entry.probability));
-                dayChain.put(time, new HeterogeneousMarkovChain.MarkovChain<>(probabilities, seed));
+                dayChain.put(time, new HeterogeneousMarkovChain.MarkovChain<>(probabilities));
             }
             chain.put(day, dayChain);
         }

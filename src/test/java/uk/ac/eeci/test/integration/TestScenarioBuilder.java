@@ -148,6 +148,31 @@ public class TestScenarioBuilder {
         );
     }
 
+    @Test
+    public void resultsAreReproducible() throws IOException, SQLException, ClassNotFoundException {
+        // run once
+        String outputPath = this.tempOutPutFile.getCanonicalPath();
+        this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), outputPath);
+        new Conductor(this.citySimulation).run();
+
+        Map<Integer, TimeSeries<String>> activityTimeSeries1 = readActivityRecordFromDB();
+        Map<Integer, TimeSeries<Double>> temperatureTimeSeries1 = readTemperatureRecordFromDB();
+        Map<Integer, TimeSeries<Double>> thermalPowerTimeSeries1 = readThermalPowerRecordFromDB();
+
+        // ... and run again
+        resetScienceOS();
+        this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), outputPath);
+        new Conductor(this.citySimulation).run();
+
+        Map<Integer, TimeSeries<String>> activityTimeSeries2 = readActivityRecordFromDB();
+        Map<Integer, TimeSeries<Double>> temperatureTimeSeries2 = readTemperatureRecordFromDB();
+        Map<Integer, TimeSeries<Double>> thermalPowerTimeSeries2 = readThermalPowerRecordFromDB();
+
+        assertThat(activityTimeSeries1, is(equalTo(activityTimeSeries2)));
+        assertThat(temperatureTimeSeries1, is(equalTo(temperatureTimeSeries2)));
+        assertThat(thermalPowerTimeSeries1, is(equalTo(thermalPowerTimeSeries2)));
+    }
+
     private Map<Integer, TimeSeries<Double>> readTemperatureRecordFromDB()
             throws IOException, SQLException, ClassNotFoundException {
 

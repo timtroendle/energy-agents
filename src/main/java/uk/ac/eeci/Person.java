@@ -2,6 +2,7 @@ package uk.ac.eeci;
 
 import java.time.*;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -33,13 +34,13 @@ public class Person {
     }
 
     private final HeterogeneousMarkovChain<Activity> markovChain;
+    private final Random randomNumberGenerator;
     private final Duration timeStepSize;
     private PersonReference reference;
     private final DwellingReference home;
     private ZonedDateTime currentTime;
     private Activity currentActivity;
     private boolean atHome;
-
 
     /**
      *
@@ -49,14 +50,18 @@ public class Person {
      * @param timeStepSize The time step size for the simulation. Must be consistent with the time step size
      *                     of the markov chain.
      * @param home A {@link DwellingReference} to this person's home.
+     * @param randomNumberGenerator A {@link Random} instance that creates random numbers for this person.
+     *                              Important for reproducibility of results.
      */
     public Person(HeterogeneousMarkovChain<Activity> markovChain, Activity initialActivity,
-                  ZonedDateTime initialDateTime, Duration timeStepSize, DwellingReference home) {
+                  ZonedDateTime initialDateTime, Duration timeStepSize, DwellingReference home,
+                  Random randomNumberGenerator) {
         this.markovChain = markovChain;
         this.currentActivity = initialActivity;
         this.currentTime = initialDateTime;
         this.timeStepSize = timeStepSize;
         this.reference = new PersonReference(this);
+        this.randomNumberGenerator = randomNumberGenerator;
         this.home = home;
         this.atHome = false;
         this.updateLocation();
@@ -69,7 +74,8 @@ public class Person {
      * Updates internal time by time step.
      */
     public void step() {
-        this.currentActivity = this.markovChain.move(this.currentActivity, this.currentTime);
+        this.currentActivity = this.markovChain.move(this.currentActivity, this.currentTime,
+                this.randomNumberGenerator);
         this.updateLocation();
         this.currentTime = this.currentTime.plus(this.timeStepSize);
     }

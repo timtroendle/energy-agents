@@ -187,7 +187,8 @@ public class ScenarioBuilder {
                         initialActivity,
                         parameters.initialTime,
                         parameters.timeStepSize,
-                        dwellings.get(homeId)
+                        dwellings.get(homeId),
+                        new Random(parameters.randomSeed)
             ));
         }
         rs.close();
@@ -242,7 +243,7 @@ public class ScenarioBuilder {
 
 
         return MarkovChainReader.buildMarkovChainFromEntries(entries, parameters.timeStepSize,
-                parameters.randomSeed, TIME_ZONE);
+                TIME_ZONE);
     }
 
     private static SimulationParameter readSimulationParameters(Connection conn) throws SQLException {

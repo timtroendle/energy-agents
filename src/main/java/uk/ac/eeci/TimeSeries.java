@@ -47,4 +47,19 @@ public class TimeSeries<K> {
         return this.index.size();
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if (!(other instanceof TimeSeries))
+            return false;
+        if (other == this)
+            return true;
+
+        TimeSeries rhs = (TimeSeries) other;
+        return this.index.equals(rhs.index) & this.values.equals(rhs.values);
+    }
+
+    @Override
+    public int hashCode() {
+        return this.index.hashCode() ^ this.values.hashCode();
+    }
 }

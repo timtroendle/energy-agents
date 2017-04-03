@@ -21,7 +21,7 @@ public class HeterogeneousMarkovChain<T> {
         this.timeZone = timeZone;
     }
 
-    public T move(T currentState, ZonedDateTime dateTime) {
+    public T move(T currentState, ZonedDateTime dateTime, Random randomNumberGenerator) {
         Map<LocalTime, MarkovChain<T>> dayChain = null;
         switch(dateTime.getDayOfWeek()) {
             case MONDAY:
@@ -38,7 +38,8 @@ public class HeterogeneousMarkovChain<T> {
         }
         T nextState = null;
         try {
-            nextState = dayChain.get(dateTime.withZoneSameInstant(this.timeZone).toLocalTime()).move(currentState);
+            nextState = dayChain.get(dateTime.withZoneSameInstant(this.timeZone).toLocalTime())
+                    .move(currentState, randomNumberGenerator);
         } catch (NullPointerException npe) {
             String msg = String.format("%s is not a valid date time for this markov chain.", dateTime);
             throw new IllegalArgumentException(msg);
@@ -50,18 +51,16 @@ public class HeterogeneousMarkovChain<T> {
     public static class MarkovChain<T> {
 
         private final Map<Pair<T, T>, Double> probabilities;
-        private final Random randomNumberGenerator;
 
-        public MarkovChain(Map<Pair<T, T>, Double> probabilities, long seed) {
+        public MarkovChain(Map<Pair<T, T>, Double> probabilities) {
             this.probabilities = probabilities;
-            this.randomNumberGenerator = new Random(seed);
             this.validateChain();
         }
 
-        public T move(T currentState) {
+        public T move(T currentState, Random randomNumberGenerator) {
             List<Pair<T, T>> possibleTransitions = this.possibleTransitions(currentState)
                 .collect(Collectors.toList());
-            double randomNumber = this.randomNumberGenerator.nextDouble();
+            double randomNumber = randomNumberGenerator.nextDouble();
             T nextState = null;
             double summedProbabilities = 0;
             for (Pair<T, T> statePair : possibleTransitions) {
@@ -91,7 +90,7 @@ public class HeterogeneousMarkovChain<T> {
             }
             for (T startState : startStates) {
                 double summedProbabilities = this.possibleTransitions(startState)
-                        .mapToDouble(statePair -> this.probabilities.get(statePair))
+                        .mapToDouble(this.probabilities::get)
                         .sum();
                 assert Math.abs(summedProbabilities - 1.0) < 0.001;
             }

@@ -20,9 +20,10 @@ import uk.ac.eeci.HeterogeneousMarkovChain.MarkovChain;
 @RunWith(Parameterized.class)
 public class TestHeterogeneousMarkovChain {
 
-    private int NUMBER_EXECUTIONS = 1000;
-    private long SEED = 24124123111L;
+    private static final int NUMBER_EXECUTIONS = 1000;
+    private static final long SEED = 24124123111L;
 
+    private Random randomNumberGenerator;
     private HeterogeneousMarkovChain<State> chain;
 
     private enum State {
@@ -55,20 +56,21 @@ public class TestHeterogeneousMarkovChain {
         LocalDateTime tsp = LocalDateTime.of(date, LocalTime.MIDNIGHT);
         do {
             if (tsp.getHour() >= 9 && tsp.getHour() < 17) {
-                weekdayChain.put(tsp.toLocalTime(), new MarkovChain<>(workTimeProbabilities, SEED));
+                weekdayChain.put(tsp.toLocalTime(), new MarkovChain<>(workTimeProbabilities));
             } else {
-                weekdayChain.put(tsp.toLocalTime(), new MarkovChain<>(spareTimeProbabilities, SEED));
+                weekdayChain.put(tsp.toLocalTime(), new MarkovChain<>(spareTimeProbabilities));
             }
-            weekendChain.put(tsp.toLocalTime(), new MarkovChain<>(spareTimeProbabilities, SEED));
+            weekendChain.put(tsp.toLocalTime(), new MarkovChain<>(spareTimeProbabilities));
             tsp = tsp.plus(Duration.ofMinutes(10));
         } while (date.equals(tsp.toLocalDate()));
+        this.randomNumberGenerator = new Random(SEED);
         this.chain = new HeterogeneousMarkovChain<>(weekdayChain, weekendChain, ZoneOffset.UTC);
     }
 
     private double frequency(State from, ZonedDateTime dateTime, State to) {
         List<State> chosenStates = new ArrayList<>();
         for (int i = 0; i < NUMBER_EXECUTIONS; i++) {
-            chosenStates.add(this.chain.move(from, dateTime));
+            chosenStates.add(this.chain.move(from, dateTime, this.randomNumberGenerator));
         }
         return (double)chosenStates.stream().filter(state -> state == to).count() / (double)NUMBER_EXECUTIONS;
     }
@@ -95,7 +97,7 @@ public class TestHeterogeneousMarkovChain {
     public void testFailsWithInvalidTimeStamp() {
         // time stamps must be full 10 minute
         ZonedDateTime invalid = ZonedDateTime.of(2017, 2, 10, 15, 21, 0, 0, ZoneOffset.UTC);
-        this.chain.move(startState, invalid);
+        this.chain.move(startState, invalid, this.randomNumberGenerator);
     }
 
     @Test

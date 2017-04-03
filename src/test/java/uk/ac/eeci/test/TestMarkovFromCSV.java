@@ -10,6 +10,7 @@ import java.io.*;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.*;
@@ -24,6 +25,7 @@ public class TestMarkovFromCSV {
     private final static Duration TIME_STEP_SIZE = Duration.ofMinutes(10);
     private final static ZonedDateTime MIDNIGHT_WEEKEND = ZonedDateTime.of(2017, 2, 11, 0, 0, 0, 0, TIME_ZONE);
     private final static ZonedDateTime MIDNIGHT_WEEKDAY = ZonedDateTime.of(2017, 2, 13, 0, 0, 0, 0, TIME_ZONE);
+    private Random randomNumberGenerator;
     private HeterogeneousMarkovChain<Person.Activity> markovChain;
 
     @Before
@@ -31,13 +33,14 @@ public class TestMarkovFromCSV {
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
         InputStream is = classloader.getResourceAsStream(CSV_FILE_NAME);
         Reader in = new InputStreamReader(is);
-        this.markovChain = MarkovChainReader.readMarkovChainFromFile(in, TIME_STEP_SIZE, SEED, TIME_ZONE);
+        this.randomNumberGenerator = new Random(SEED);
+        this.markovChain = MarkovChainReader.readMarkovChainFromFile(in, TIME_STEP_SIZE, TIME_ZONE);
     }
 
     private double frequency(Person.Activity from, ZonedDateTime dateTime, Person.Activity to) {
         List<Person.Activity> chosenStates = new ArrayList<>();
         for (int i = 0; i < NUMBER_EXECUTIONS; i++) {
-            chosenStates.add(this.markovChain.move(from, dateTime));
+            chosenStates.add(this.markovChain.move(from, dateTime, this.randomNumberGenerator));
         }
         return (double)chosenStates.stream().filter(state -> state == to).count() / (double)NUMBER_EXECUTIONS;
     }

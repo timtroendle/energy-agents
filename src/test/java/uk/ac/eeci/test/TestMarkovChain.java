@@ -15,6 +15,7 @@ public class TestMarkovChain
     private int NUMBER_EXECUTIONS = 1000;
     private long SEED = 24124123111L;
 
+    private Random randomNumberGenerator;
     private HeterogeneousMarkovChain.MarkovChain<State> chain;
 
     private enum State {
@@ -23,19 +24,20 @@ public class TestMarkovChain
 
     @Before
     public void setUp() {
+        this.randomNumberGenerator = new Random(SEED);
         Map<Pair<State, State>, Double> probabilities = new HashMap<>();
         probabilities.put(new Pair<>(State.A, State.A), 0.50);
         probabilities.put(new Pair<>(State.A, State.B), 0.40);
         probabilities.put(new Pair<>(State.A, State.C), 0.10);
         probabilities.put(new Pair<>(State.B, State.B), 1.0);
         probabilities.put(new Pair<>(State.C, State.C), 1.0);
-        this.chain = new HeterogeneousMarkovChain.MarkovChain<>(probabilities, SEED);
+        this.chain = new HeterogeneousMarkovChain.MarkovChain<>(probabilities);
     }
 
     private double frequency(State from, State to) {
         List<State> chosenStates = new ArrayList<>();
         for (int i = 0; i < NUMBER_EXECUTIONS; i++) {
-            chosenStates.add(this.chain.move(from));
+            chosenStates.add(this.chain.move(from, this.randomNumberGenerator));
         }
         return (double)chosenStates.stream().filter(state -> state == to).count() / (double)NUMBER_EXECUTIONS;
     }
@@ -74,11 +76,8 @@ public class TestMarkovChain
     public void testIsDeterministic() {
         List<State> chosenStates = new ArrayList<>();
         for (int i = 0; i < NUMBER_EXECUTIONS; i++) {
-            Map<Pair<State, State>, Double> probabilities = new HashMap<>();
-            probabilities.put(new Pair<>(State.A, State.A), 0.75);
-            probabilities.put(new Pair<>(State.A, State.B), 0.25);
-            this.chain = new HeterogeneousMarkovChain.MarkovChain<>(probabilities, SEED);
-            chosenStates.add(this.chain.move(State.A));
+            this.randomNumberGenerator = new Random(SEED);
+            chosenStates.add(this.chain.move(State.A, this.randomNumberGenerator));
         }
 
         assertThat(chosenStates.stream().distinct().count(), is(equalTo(1L)));
@@ -89,6 +88,6 @@ public class TestMarkovChain
         Map<Pair<State, State>, Double> probabilities = new HashMap<>();
         probabilities.put(new Pair<>(State.A, State.A), 0.75);
         probabilities.put(new Pair<>(State.A, State.B), 0.05);
-        this.chain = new HeterogeneousMarkovChain.MarkovChain<>(probabilities, SEED);
+        this.chain = new HeterogeneousMarkovChain.MarkovChain<>(probabilities);
     }
 }
