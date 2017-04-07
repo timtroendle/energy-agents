@@ -26,7 +26,6 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_PAR_INITIAL_DATETIME = "initialDateTime";
     public final static String SQL_COLUMNS_PAR_TIME_STEP_SIZE = "timeStepSize_in_min";
     public final static String SQL_COLUMNS_PAR_NUMBER_TIME_STEPS = "numberTimeSteps";
-    public final static String SQL_COLUMNS_PAR_RANDOM_SEED = "randomSeed";
     public final static String SQL_COLUMNS_PAR_SET_POINT_WHILE_HOME = "setPointWhileHome";
     public final static String SQL_COLUMNS_PAR_SET_POINT_WHILE_ASLEEP = "setPointWhileAsleep";
     public final static String SQL_COLUMNS_PAR_WAKE_UP_TIME = "wakeUpTime";
@@ -46,6 +45,7 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_PPL_MARKOV_ID = "markovChainId";
     public final static String SQL_COLUMNS_PPL_INITIAL_ACTIVITY = "initialActivity";
     public final static String SQL_COLUMNS_PPL_INDEX = "index";
+    public final static String SQL_COLUMNS_PPL_RANDOM_SEED = "randomSeed";
     public final static String SQL_COLUMNS_MARKOVS_INDEX = "index";
     public final static String SQL_COLUMNS_MARKOVS_TABLENAME = "tablename";
     public final static String SQL_COLUMNS_MARKOV_DAY = "day";
@@ -65,13 +65,11 @@ public class ScenarioBuilder {
         private final ZonedDateTime initialTime;
         private final Duration timeStepSize;
         private final int numberTimeSteps;
-        private final long randomSeed;
 
-        private SimulationParameter(ZonedDateTime initialTime, Duration timeStepSize, int numberTimeSteps, long randomSeed) {
+        private SimulationParameter(ZonedDateTime initialTime, Duration timeStepSize, int numberTimeSteps) {
             this.initialTime = initialTime;
             this.timeStepSize = timeStepSize;
             this.numberTimeSteps = numberTimeSteps;
-            this.randomSeed = randomSeed;
         }
     }
 
@@ -183,7 +181,8 @@ public class ScenarioBuilder {
         while (rs.next()) {
             int personId = rs.getInt(SQL_COLUMNS_PPL_INDEX);
             int homeId = rs.getInt(SQL_COLUMNS_PPL_DWELLING_ID);
-            int markovChainId = rs.getInt((SQL_COLUMNS_PPL_MARKOV_ID));
+            int markovChainId = rs.getInt(SQL_COLUMNS_PPL_MARKOV_ID);
+            int randomSeed = rs.getInt(SQL_COLUMNS_PPL_RANDOM_SEED);
             Activity initialActivity = Activity.valueOf(rs.getString(SQL_COLUMNS_PPL_INITIAL_ACTIVITY));
             people.put(
                     personId,
@@ -193,7 +192,7 @@ public class ScenarioBuilder {
                         parameters.initialTime,
                         parameters.timeStepSize,
                         dwellings.get(homeId),
-                        new Random(parameters.randomSeed)
+                        new Random(randomSeed)
             ));
         }
         rs.close();
@@ -244,9 +243,6 @@ public class ScenarioBuilder {
             ));
         }
         rs.close();
-
-
-
         return MarkovChainReader.buildMarkovChainFromEntries(entries, parameters.timeStepSize,
                 TIME_ZONE);
     }
@@ -259,8 +255,7 @@ public class ScenarioBuilder {
             parameters.add(new SimulationParameter(
                     readTimeStamp(rs, SQL_COLUMNS_PAR_INITIAL_DATETIME),
                     Duration.ofMinutes(rs.getInt(SQL_COLUMNS_PAR_TIME_STEP_SIZE)),
-                    rs.getInt(SQL_COLUMNS_PAR_NUMBER_TIME_STEPS),
-                    rs.getLong(SQL_COLUMNS_PAR_RANDOM_SEED)
+                    rs.getInt(SQL_COLUMNS_PAR_NUMBER_TIME_STEPS)
             ));
         }
         rs.close();
