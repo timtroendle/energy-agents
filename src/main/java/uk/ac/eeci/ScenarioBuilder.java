@@ -1,9 +1,12 @@
 package uk.ac.eeci;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import uk.ac.eeci.Person.Activity;
 import uk.ac.eeci.strategy.HeatingControlStrategyFactory;
 import uk.ac.eeci.strategy.HeatingControlStrategyFactory.ControlStrategyType;
 
+import java.io.IOException;
 import java.sql.*;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -11,6 +14,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ScenarioBuilder {
+
+    private final static Logger LOGGER = LogManager.getLogger(ScenarioBuilder.class.getName());
 
     public final static String SQL_TABLES_PARAMETERS = "parameters";
     public final static String SQL_TABLES_ENVIRONMENT = "environment";
@@ -70,7 +75,7 @@ public class ScenarioBuilder {
         }
     }
 
-    public static CitySimulation readScenario(String databasePath, String outputPath) {
+    public static CitySimulation readScenario(String databasePath, String outputPath) throws IOException {
         CitySimulation simulation = null;
         Connection conn = null;
         try {
@@ -78,8 +83,8 @@ public class ScenarioBuilder {
             conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", databasePath));
             simulation = readScenario(conn, databasePath, outputPath);
         } catch (ClassNotFoundException|SQLException ex) {
-            ex.printStackTrace();
-            System.out.println(String.format("Failed to read scenario from %s.", databasePath));
+            LOGGER.error(String.format("Failed to read scenario from %s.", databasePath), ex);
+            throw new IOException("Failed to read scenario");
         } finally {
             if (conn != null) {
                 try {

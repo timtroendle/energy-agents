@@ -10,6 +10,8 @@ import org.apache.logging.log4j.core.appender.FileAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.LoggerContext;
 
+import java.io.IOException;
+
 
 public class CommandLineInterface {
 
@@ -65,10 +67,17 @@ public class CommandLineInterface {
         Reference.pool = new WorkerPool(this.numberWorkers);
         Reference.pool.setCurrentExecutor(Reference.pool.main); // FIXME shouldnt be here
         logger.info(String.format("Attempting to read scenario description from file %s.", this.inputFilePath));
-        CitySimulation citySimulation = ScenarioBuilder.readScenario(this.inputFilePath, this.outputFilePath);
-        logger.info("Start of the simulation.");
-        new Conductor(citySimulation).run();
-        logger.info("Simulation terminated gracefully.");
+        CitySimulation citySimulation;
+        try {
+            citySimulation = ScenarioBuilder.readScenario(this.inputFilePath, this.outputFilePath);
+            logger.info("Start of the simulation.");
+            new Conductor(citySimulation).run();
+            logger.info("Simulation terminated gracefully.");
+        }
+        catch (IOException ioe) {
+            logger.info("Simulation failed.");
+            Reference.pool.shutdown();
+        }
     }
 
     private static void logTempFileName() {

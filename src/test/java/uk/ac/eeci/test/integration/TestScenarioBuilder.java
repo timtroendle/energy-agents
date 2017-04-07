@@ -75,6 +75,11 @@ public class TestScenarioBuilder {
         this.tempOutPutFile.deleteOnExit();
     }
 
+    @Test(expected = IOException.class)
+    public void throwsIOExceptionWhenInputFileDoesNotExist() throws IOException {
+        ScenarioBuilder.readScenario(this.inputURL.getPath() + "invalid", this.tempOutPutFile.getCanonicalPath());
+    }
+
     @Test
     public void resultContainsValidTemperatureRecord() throws ClassNotFoundException, SQLException, IOException {
         this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), this.tempOutPutFile.getCanonicalPath());
