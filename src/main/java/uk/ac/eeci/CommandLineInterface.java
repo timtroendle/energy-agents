@@ -19,6 +19,7 @@ public class CommandLineInterface {
 
     private String inputFilePath;
     private String outputFilePath;
+    private int numberWorkers;
 
     public static void main(String ... args) {
 
@@ -31,6 +32,10 @@ public class CommandLineInterface {
         Option output = new Option("o", "output", true, "file path for output db");
         output.setRequired(true);
         options.addOption(output);
+
+        Option nWorker = new Option("w", "nWorker", true, "number of workers");
+        nWorker.setRequired(false);
+        options.addOption(nWorker);
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();
@@ -49,12 +54,15 @@ public class CommandLineInterface {
         CommandLineInterface cli = new CommandLineInterface();
         cli.inputFilePath = cmd.getOptionValue("input");
         cli.outputFilePath = cmd.getOptionValue("output");
+        cli.numberWorkers = Integer.valueOf(cmd.getOptionValue("nWorker", "4"));
         cli.run();
     }
 
     private void run() {
         logger.info(String.format("Hi there. This is %s version %s.", TOOL_NAME, CitySimulation.inferModelVersion()));
         logTempFileName();
+        Reference.pool.shutdown();
+        Reference.pool = new WorkerPool(this.numberWorkers);
         Reference.pool.setCurrentExecutor(Reference.pool.main); // FIXME shouldnt be here
         logger.info(String.format("Attempting to read scenario description from file %s.", this.inputFilePath));
         CitySimulation citySimulation = ScenarioBuilder.readScenario(this.inputFilePath, this.outputFilePath);
