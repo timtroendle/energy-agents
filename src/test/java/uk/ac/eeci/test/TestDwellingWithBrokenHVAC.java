@@ -25,6 +25,7 @@ public class TestDwellingWithBrokenHVAC {
     private final static Double MAX_HEATING_POWER = 0.0;
     private final static Duration TIME_STEP_SIZE = Duration.ofHours(1);
     private HeatingControlStrategyReference controlStrategy = mock(HeatingControlStrategyReference.class);
+    private Person person = mock(Person.class);
     private Environment environment = mock(Environment.class);
     private Dwelling dwelling;
 
@@ -84,5 +85,21 @@ public class TestDwellingWithBrokenHVAC {
         when(this.environment.getCurrentTemperature()).thenReturn(INITIAL_DWELLING_TEMPERATURE + 5);
         this.dwelling.step().get();
         assertThat(this.dwelling.getCurrentThermalPower(), is(equalTo(0.0)));
+    }
+
+    @Test
+    public void dwellingGetsWarmerThroughMetabolicHeatGains() throws ExecutionException, InterruptedException {
+        when(this.person.getCurrentMetabolicRate()).thenReturn(50.0);
+        this.dwelling.enter(new PersonReference(this.person));
+        this.dwelling.step().get();
+        assertThat(this.dwelling.getCurrentTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
+    }
+
+    @Test
+    public void dwellingDoesNotGetWarmerWithZeroMetabolicHeatGain() throws ExecutionException, InterruptedException {
+        when(this.person.getCurrentMetabolicRate()).thenReturn(0.0);
+        this.dwelling.enter(new PersonReference(this.person));
+        this.dwelling.step().get();
+        assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }
 }

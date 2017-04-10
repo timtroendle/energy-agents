@@ -2,16 +2,19 @@ package uk.ac.eeci;
 
 import java.time.Duration;
 import java.time.ZonedDateTime;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.stream.DoubleStream;
 
 public class Dwelling {
 
     private double currentTemperature;
     private double currentThermalPower;
+    private double currentMetabolicHeatGain;
     private ZonedDateTime currentTime;
     private final double heatMassCapacity;
     private final double heatTransmission;
@@ -62,14 +65,24 @@ public class Dwelling {
      * Performs dwelling simulation for the next time step.
      */
     public CompletableFuture<Void> step() {
-        return this.environmentReference.getCurrentTemperature()
+        CompletableFuture<Double>[] steps = new CompletableFuture[this.peopleInDwelling.size()];
+        int i = 0;
+        for (PersonReference person : this.peopleInDwelling) {
+            steps[i] = person.getCurrentMetabolicRate();
+            i++;
+        }
+        return CompletableFuture.allOf(steps).thenAccept(v ->
+                    this.currentMetabolicHeatGain = Arrays.stream(steps)
+                            .map(CompletableFuture::join)
+                            .mapToDouble(Double::doubleValue).sum())
+                .thenCombine(this.environmentReference.getCurrentTemperature(), (v, temp) -> temp)
                 .thenAcceptBoth(this.heatingControlStrategy.heatingSetPoint(this.currentTime, this.peopleInDwelling),
-                        (temp, setPoint) -> this.step(setPoint, temp));
+                (temp, setPoint) -> this.step(setPoint, temp));
     }
 
     private void step(Optional<Double> heatingSetPoint, double outsideTemperature) {
         Function<Double, Double> nextTemperature = thermalPower ->
-                this.nextTemperature(outsideTemperature, thermalPower);
+                this.nextTemperature(outsideTemperature, thermalPower, this.currentMetabolicHeatGain);
         double noPower = 0.0;
         double nextTemperatureNoPower = nextTemperature.apply(noPower);
         if (!heatingSetPoint.isPresent() || nextTemperatureNoPower >= heatingSetPoint.get()) {
@@ -111,10 +124,10 @@ public class Dwelling {
         this.peopleInDwelling.remove(person);
     }
 
-    private double nextTemperature(double outsideTemperature, double thermalPower) {
+    private double nextTemperature(double outsideTemperature, double thermalPower, double heatGains) {
         double dt_by_cm = this.timeStepSize.toMillis() / 1000.0 / this.heatMassCapacity;
         return (this.currentTemperature * (1 - dt_by_cm * this.heatTransmission) +
-                dt_by_cm * (thermalPower + this.heatTransmission * outsideTemperature));
+                dt_by_cm * (thermalPower + this.heatTransmission * outsideTemperature + heatGains));
 
     }
 }

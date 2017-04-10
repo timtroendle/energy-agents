@@ -46,6 +46,8 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_PPL_INITIAL_ACTIVITY = "initialActivity";
     public final static String SQL_COLUMNS_PPL_INDEX = "index";
     public final static String SQL_COLUMNS_PPL_RANDOM_SEED = "randomSeed";
+    public final static String SQL_COLUMNS_PPL_ACTIVE_METABOLIC_RATE = "activeMetabolicRate";
+    public final static String SQL_COLUMNS_PPL_PASSIVE_METABOLIC_RATE = "passiveMetabolicRate";
     public final static String SQL_COLUMNS_MARKOVS_INDEX = "index";
     public final static String SQL_COLUMNS_MARKOVS_TABLENAME = "tablename";
     public final static String SQL_COLUMNS_MARKOV_DAY = "day";
@@ -183,11 +185,15 @@ public class ScenarioBuilder {
             int homeId = rs.getInt(SQL_COLUMNS_PPL_DWELLING_ID);
             int markovChainId = rs.getInt(SQL_COLUMNS_PPL_MARKOV_ID);
             int randomSeed = rs.getInt(SQL_COLUMNS_PPL_RANDOM_SEED);
+            int activeMetabolicRate = rs.getInt(SQL_COLUMNS_PPL_ACTIVE_METABOLIC_RATE);
+            int passiveMetabolicRate = rs.getInt(SQL_COLUMNS_PPL_PASSIVE_METABOLIC_RATE);
             Activity initialActivity = Activity.valueOf(rs.getString(SQL_COLUMNS_PPL_INITIAL_ACTIVITY));
             people.put(
                     personId,
                     new Person(
                         markovChains.get(markovChainId),
+                        activeMetabolicRate,
+                        passiveMetabolicRate,
                         initialActivity,
                         parameters.initialTime,
                         parameters.timeStepSize,

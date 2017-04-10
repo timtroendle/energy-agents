@@ -14,7 +14,7 @@ public class Person {
      * Activities of citizens.
      */
     public enum Activity {
-        HOME, SLEEP_AT_HOME, OTHER_HOME, SLEEP_AT_OTHER_HOME, NOT_AT_HOME;
+        HOME, SLEEP_AT_HOME, OTHER_HOME, SLEEP_AT_OTHER_HOME, NOT_AT_HOME
     }
 
     public final static Set<Activity> HOME_ACTIVITIES;
@@ -34,6 +34,8 @@ public class Person {
     }
 
     private final HeterogeneousMarkovChain<Activity> markovChain;
+    private final double activeMetabolicRate;
+    private final double passiveMetabolicRate;
     private final Random randomNumberGenerator;
     private final Duration timeStepSize;
     private PersonReference reference;
@@ -45,6 +47,8 @@ public class Person {
     /**
      *
      * @param markovChain The {@link HeterogeneousMarkovChain} that determines follow up Person activities.
+     * @param activeMetabolicRate The metabolic rate while active [W].
+     * @param passiveMetabolicRate The metabolic rate while asleep [W].
      * @param initialActivity The {@link Activity} at startup.
      * @param initialDateTime The date time at startup.
      * @param timeStepSize The time step size for the simulation. Must be consistent with the time step size
@@ -53,10 +57,12 @@ public class Person {
      * @param randomNumberGenerator A {@link Random} instance that creates random numbers for this person.
      *                              Important for reproducibility of results.
      */
-    public Person(HeterogeneousMarkovChain<Activity> markovChain, Activity initialActivity,
-                  ZonedDateTime initialDateTime, Duration timeStepSize, DwellingReference home,
-                  Random randomNumberGenerator) {
+    public Person(HeterogeneousMarkovChain<Activity> markovChain, double activeMetabolicRate, double passiveMetabolicRate,
+                  Activity initialActivity, ZonedDateTime initialDateTime, Duration timeStepSize,
+                  DwellingReference home, Random randomNumberGenerator) {
         this.markovChain = markovChain;
+        this.activeMetabolicRate = activeMetabolicRate;
+        this.passiveMetabolicRate = passiveMetabolicRate;
         this.currentActivity = initialActivity;
         this.currentTime = initialDateTime;
         this.timeStepSize = timeStepSize;
@@ -82,6 +88,14 @@ public class Person {
 
     public Activity getCurrentActivity() {
         return this.currentActivity;
+    }
+
+    public double getCurrentMetabolicRate() {
+        if (SLEEP_ACTIVITIES.contains(this.currentActivity)) {
+            return this.passiveMetabolicRate;
+        } else {
+            return this.activeMetabolicRate;
+        }
     }
 
     private void updateLocation() {

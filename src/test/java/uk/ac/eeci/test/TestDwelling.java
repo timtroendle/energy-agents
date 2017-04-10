@@ -43,6 +43,8 @@ public class TestDwelling {
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(21.9)));
         when(this.environment.getCurrentTemperature())
                 .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE));
+        when(this.person.getCurrentMetabolicRate())
+                .thenReturn(CompletableFuture.completedFuture(2.0));
         double conditionedFloorArea = 100;
         this.dwelling = new Dwelling(165000 * conditionedFloorArea, 200,
                                      Double.POSITIVE_INFINITY, INITIAL_DWELLING_TEMPERATURE,

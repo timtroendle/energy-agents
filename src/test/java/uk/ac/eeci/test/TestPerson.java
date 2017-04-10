@@ -21,6 +21,8 @@ public class TestPerson {
     private static final Duration TIME_STEP_SIZE = Duration.ofMinutes(10);
     private static final Activity INITIAL_ACTIVITY = Activity.NOT_AT_HOME;
     private static final ZonedDateTime INITIAL_DATETIME = ZonedDateTime.of(2017, 02, 11, 16, 20, 0, 0, ZoneOffset.UTC);
+    private static final double ACTIVE_METABOLIC_RATE = 200;
+    private static final double PASSIVE_METABOLIC_RATE = 50;
     private HeterogeneousMarkovChain<Activity> markovChain = mock(HeterogeneousMarkovChain.class);
     private Random randomNumberGenerator = mock(Random.class);
     private DwellingReference home = mock(DwellingReference.class);
@@ -28,7 +30,8 @@ public class TestPerson {
 
     @Before
     public void setUp() {
-        this.person = new Person(this.markovChain, INITIAL_ACTIVITY, INITIAL_DATETIME,
+        this.person = new Person(this.markovChain, ACTIVE_METABOLIC_RATE, PASSIVE_METABOLIC_RATE,
+                INITIAL_ACTIVITY, INITIAL_DATETIME,
                 TIME_STEP_SIZE, home, randomNumberGenerator);
     }
 
@@ -98,5 +101,45 @@ public class TestPerson {
                 .thenReturn(Activity.OTHER_HOME);
         person.step();
         verify(this.home, times(1)).leave(any());
+    }
+
+    @Test
+    public void returnsActiveMetabolicRateWhenActiveAtHome() {
+        when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
+                .thenReturn(Activity.HOME);
+        person.step();
+        assertThat(this.person.getCurrentMetabolicRate(), is(equalTo(ACTIVE_METABOLIC_RATE)));
+    }
+
+    @Test
+    public void returnsActiveMetabolicRateWhenActiveAtSomeoneElsesHome() {
+        when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
+                .thenReturn(Activity.OTHER_HOME);
+        person.step();
+        assertThat(this.person.getCurrentMetabolicRate(), is(equalTo(ACTIVE_METABOLIC_RATE)));
+    }
+
+    @Test
+    public void returnsActiveMetabolicRateWhenOutside() {
+        when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
+                .thenReturn(Activity.NOT_AT_HOME);
+        person.step();
+        assertThat(this.person.getCurrentMetabolicRate(), is(equalTo(ACTIVE_METABOLIC_RATE)));
+    }
+
+    @Test
+    public void returnsPassiveMetabolicRateWhenAsleep() {
+        when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
+                .thenReturn(Activity.SLEEP_AT_HOME);
+        person.step();
+        assertThat(this.person.getCurrentMetabolicRate(), is(equalTo(PASSIVE_METABOLIC_RATE)));
+    }
+
+    @Test
+    public void returnsPassiveMetabolicRateWhenAsleepAtOthersHome() {
+        when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
+                .thenReturn(Activity.SLEEP_AT_OTHER_HOME);
+        person.step();
+        assertThat(this.person.getCurrentMetabolicRate(), is(equalTo(PASSIVE_METABOLIC_RATE)));
     }
 }

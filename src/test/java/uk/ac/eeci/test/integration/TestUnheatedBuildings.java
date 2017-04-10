@@ -37,6 +37,8 @@ public class TestUnheatedBuildings {
     private final static double INITIAL_DWELLING_TEMPERATURE = 22.0;
     private final static double CONSTANT_OUTDOOR_TEMPERATURE = 24.0;
     private final static double EPSILON = 0.1;
+    private final static double ACTIVE_METABOLIC_RATE = 100;
+    private final static double PASSIVE_METABOLIC_RATE = 30;
     private Conductor conductor;
     private List<Dwelling> dwellings;
     private List<DwellingReference> dwellingReferences;
@@ -91,8 +93,8 @@ public class TestUnheatedBuildings {
             Reader in = new InputStreamReader(is);
             int dwellingReference = randomNumberGenerator.nextInt(dwellings.size());
             Person p = new Person(MarkovChainReader.readMarkovChainFromFile(in, TIME_STEP_SIZE, TIME_ZONE),
-                    Activity.NOT_AT_HOME, INITIAL_TIME, TIME_STEP_SIZE, this.dwellingReferences.get(dwellingReference),
-                    new Random(SEED));
+                    ACTIVE_METABOLIC_RATE, PASSIVE_METABOLIC_RATE, Activity.NOT_AT_HOME, INITIAL_TIME,
+                    TIME_STEP_SIZE, this.dwellingReferences.get(dwellingReference), new Random(SEED));
             PersonReference pRef = new PersonReference(p);
             people.add(pRef);
         }

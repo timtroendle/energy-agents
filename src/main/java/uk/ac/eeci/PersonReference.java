@@ -19,4 +19,9 @@ public class PersonReference extends Reference<Person> {
         return CompletableFuture.supplyAsync(this.referent::getCurrentActivity, this.executor)
                 .thenApplyAsync(i -> i, pool.currentExecutor());
     }
+
+    public CompletableFuture<Double> getCurrentMetabolicRate() {
+        return CompletableFuture.supplyAsync(this.referent::getCurrentMetabolicRate, this.executor)
+                .thenApplyAsync(i -> i, pool.currentExecutor());
+    }
 }
