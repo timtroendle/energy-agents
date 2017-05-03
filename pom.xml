@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>uk.ac.eeci</groupId>
+    <groupId>uk.ac.cam.eeci</groupId>
     <artifactId>energy-agents</artifactId>
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
@@ -24,7 +24,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>2.19.1</version>
                 <configuration>
-                    <groups>uk.ac.eeci.test.integration.IntegrationTest</groups>
+                    <groups>uk.ac.cam.eeci.energyagents.test.integration.IntegrationTest</groups>
                     <includes>
                         <include>**/*.java</include>
                     </includes>
@@ -43,7 +43,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.19.1</version>
                 <configuration>
-                    <excludedGroups>uk.ac.eeci.test.integration.IntegrationTest</excludedGroups>
+                    <excludedGroups>uk.ac.cam.eeci.energyagents.test.integration.IntegrationTest</excludedGroups>
                 </configuration>
             </plugin>
             <plugin>
@@ -53,7 +53,7 @@
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <mainClass>uk.ac.eeci.CommandLineInterface</mainClass>
+                            <mainClass>uk.ac.cam.eeci.energyagents.CommandLineInterface</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

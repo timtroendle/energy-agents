@@ -12,7 +12,7 @@
         </File>
     </Appenders>
     <Loggers>
-        <Logger name="uk.ac.eeci" level="debug">
+        <Logger name="uk.ac.cam.eeci" level="debug">
             <AppenderRef ref="Console"/>
         </Logger>
         <Root level="debug">
