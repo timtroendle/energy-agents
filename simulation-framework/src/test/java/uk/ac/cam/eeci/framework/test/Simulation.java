@@ -1,9 +1,8 @@
-package io.improbable.scienceos.test;
+package uk.ac.cam.eeci.framework.test;
 
-import io.improbable.scienceos.EndSimulationException;
-import io.improbable.scienceos.ISimulation;
+import uk.ac.cam.eeci.framework.EndSimulationException;
+import uk.ac.cam.eeci.framework.ISimulation;
 
-import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 

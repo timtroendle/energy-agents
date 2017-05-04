@@ -1,8 +1,8 @@
 package uk.ac.cam.eeci.energyagents;
 
-import io.improbable.scienceos.Conductor;
-import io.improbable.scienceos.Reference;
-import io.improbable.scienceos.WorkerPool;
+import uk.ac.cam.eeci.framework.Conductor;
+import uk.ac.cam.eeci.framework.Reference;
+import uk.ac.cam.eeci.framework.WorkerPool;
 import org.apache.commons.cli.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

@@ -1,6 +1,6 @@
 package uk.ac.cam.eeci.energyagents.test.integration;
 
-import io.improbable.scienceos.Conductor;
+import uk.ac.cam.eeci.framework.Conductor;
 import org.hamcrest.Matchers;
 import org.javatuples.Pair;
 import org.javatuples.Triplet;

@@ -1,7 +1,7 @@
 package uk.ac.cam.eeci.energyagents.test.utils;
 
-import io.improbable.scienceos.Reference;
-import io.improbable.scienceos.WorkerPool;
+import uk.ac.cam.eeci.framework.Reference;
+import uk.ac.cam.eeci.framework.WorkerPool;
 
 import java.util.ArrayList;
 import java.util.Arrays;

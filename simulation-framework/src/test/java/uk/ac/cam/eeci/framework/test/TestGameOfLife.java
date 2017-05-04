@@ -1,8 +1,8 @@
-package io.improbable.scienceos.test;
+package uk.ac.cam.eeci.framework.test;
 
-import io.improbable.scienceos.*;
 import org.junit.Before;
 import org.junit.Test;
+import uk.ac.cam.eeci.framework.Conductor;
 
 public class TestGameOfLife {
 

@@ -1,6 +1,6 @@
-package io.improbable.scienceos.test;
+package uk.ac.cam.eeci.framework.test;
 
-import io.improbable.scienceos.Reference;
+import uk.ac.cam.eeci.framework.Reference;
 
 import java.util.concurrent.CompletableFuture;
 

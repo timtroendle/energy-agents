@@ -1,4 +1,4 @@
-package io.improbable.scienceos.test;
+package uk.ac.cam.eeci.framework.test;
 
 import java.io.Serializable;
 import java.util.Random;

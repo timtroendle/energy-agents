@@ -1,7 +1,7 @@
 package uk.ac.cam.eeci.energyagents.test;
 
-import io.improbable.scienceos.EndSimulationException;
-import io.improbable.scienceos.Reference;
+import uk.ac.cam.eeci.framework.EndSimulationException;
+import uk.ac.cam.eeci.framework.Reference;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;

@@ -1,6 +1,6 @@
 package uk.ac.cam.eeci.energyagents;
 
-import io.improbable.scienceos.Reference;
+import uk.ac.cam.eeci.framework.Reference;
 
 import java.util.concurrent.CompletableFuture;
 

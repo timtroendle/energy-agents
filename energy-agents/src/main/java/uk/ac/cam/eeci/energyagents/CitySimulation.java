@@ -1,7 +1,7 @@
 package uk.ac.cam.eeci.energyagents;
 
-import io.improbable.scienceos.EndSimulationException;
-import io.improbable.scienceos.ISimulation;
+import uk.ac.cam.eeci.framework.EndSimulationException;
+import uk.ac.cam.eeci.framework.ISimulation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

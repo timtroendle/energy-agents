@@ -1,6 +1,6 @@
 package uk.ac.cam.eeci.energyagents.test.integration;
 
-import io.improbable.scienceos.Conductor;
+import uk.ac.cam.eeci.framework.Conductor;
 import org.hamcrest.core.Every;
 import org.junit.After;
 import org.junit.Before;
