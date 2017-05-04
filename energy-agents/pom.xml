@@ -104,8 +104,8 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>io.improbable</groupId>
-            <artifactId>scienceos</artifactId>
+            <groupId>uk.ac.cam.eeci</groupId>
+            <artifactId>simulation-framework</artifactId>
             <version>0.1-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>

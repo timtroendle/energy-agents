@@ -9,6 +9,7 @@
     <version>1.0</version>
     <name>energy-agents-parent</name>
     <modules>
+        <module>simulation-framework</module>
         <module>energy-agents</module>
     </modules>
 </project>
