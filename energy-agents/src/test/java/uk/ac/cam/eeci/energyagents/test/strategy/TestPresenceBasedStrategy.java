@@ -92,14 +92,6 @@ public class TestPresenceBasedStrategy {
     }
 
     @Test
-    public void activeSetPointWhenOneForeignPersonHome() throws ExecutionException, InterruptedException {
-        when(this.person1.getCurrentActivity()).thenReturn(CompletableFuture.completedFuture(Person.Activity.OTHER_HOME));
-        this.people.remove(this.person2);
-        assertThat(this.strategy.heatingSetPoint(this.timeStamp, this.people).get().get(),
-                is(equalTo(SET_POINT_WHILE_ACTIVE_AT_HOME)));
-    }
-
-    @Test
     public void activeSetPointEvenWhenSomePersonSleep() throws ExecutionException, InterruptedException {
         when(this.person1.getCurrentActivity()).thenReturn(CompletableFuture.completedFuture(Person.Activity.SLEEP_AT_HOME));
         when(this.person2.getCurrentActivity()).thenReturn(CompletableFuture.completedFuture(Person.Activity.HOME));
@@ -111,14 +103,6 @@ public class TestPresenceBasedStrategy {
     public void sleepSetPointWhenAllPersonSleep() throws ExecutionException, InterruptedException {
         when(this.person1.getCurrentActivity()).thenReturn(CompletableFuture.completedFuture(Person.Activity.SLEEP_AT_HOME));
         when(this.person2.getCurrentActivity()).thenReturn(CompletableFuture.completedFuture(Person.Activity.SLEEP_AT_HOME));
-        assertThat(this.strategy.heatingSetPoint(this.timeStamp, this.people).get().get(),
-                is(equalTo(SET_POINT_WHILE_SLEEPING_AT_HOME)));
-    }
-
-    @Test
-    public void sleepSetPointWhenAllPersonIncludingForeignSleep() throws ExecutionException, InterruptedException {
-        when(this.person1.getCurrentActivity()).thenReturn(CompletableFuture.completedFuture(Person.Activity.SLEEP_AT_OTHER_HOME));
-        this.people.remove(this.person2);
         assertThat(this.strategy.heatingSetPoint(this.timeStamp, this.people).get().get(),
                 is(equalTo(SET_POINT_WHILE_SLEEPING_AT_HOME)));
     }

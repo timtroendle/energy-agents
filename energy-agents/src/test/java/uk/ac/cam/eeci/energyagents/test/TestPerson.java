@@ -18,7 +18,7 @@ import uk.ac.cam.eeci.energyagents.Person.Activity;
 public class TestPerson {
 
     private static final Duration TIME_STEP_SIZE = Duration.ofMinutes(10);
-    private static final Person.Activity INITIAL_ACTIVITY = Person.Activity.NOT_AT_HOME;
+    private static final Activity INITIAL_ACTIVITY = Activity.NOT_AT_HOME;
     private static final ZonedDateTime INITIAL_DATETIME = ZonedDateTime.of(2017, 02, 11, 16, 20, 0, 0, ZoneOffset.UTC);
     private static final double ACTIVE_METABOLIC_RATE = 200;
     private static final double PASSIVE_METABOLIC_RATE = 50;
@@ -42,26 +42,26 @@ public class TestPerson {
     @Test
     public void testUpdatesStateAccordingToMarkovChainDuringStep() {
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.SLEEP_AT_OTHER_HOME);
+                .thenReturn(Activity.SLEEP_AT_HOME);
         person.step();
-        assertThat(person.getCurrentActivity(), is(equalTo(Person.Activity.SLEEP_AT_OTHER_HOME)));
+        assertThat(person.getCurrentActivity(), is(equalTo(Activity.SLEEP_AT_HOME)));
     }
 
     @Test
     public void testUpdatesTimeDuringStep() {
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.OTHER_HOME);
+                .thenReturn(Activity.SLEEP_AT_HOME);
         person.step();
         reset(this.markovChain);
         person.step();
         verify(this.markovChain)
-                .move(Person.Activity.OTHER_HOME, INITIAL_DATETIME.plus(TIME_STEP_SIZE), this.randomNumberGenerator);
+                .move(Activity.SLEEP_AT_HOME, INITIAL_DATETIME.plus(TIME_STEP_SIZE), this.randomNumberGenerator);
     }
 
     @Test
     public void testEntersHomeWhenStartingBeingAtHome() {
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.HOME);
+                .thenReturn(Activity.HOME);
         person.step();
         verify(this.home).enter(any());
     }
@@ -69,10 +69,10 @@ public class TestPerson {
     @Test
     public void testDoesNotEnterHomeTwice() {
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.HOME);
+                .thenReturn(Activity.HOME);
         person.step();
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.SLEEP_AT_HOME);
+                .thenReturn(Activity.SLEEP_AT_HOME);
         person.step();
         verify(this.home, times(1)).enter(any());
     }
@@ -80,10 +80,10 @@ public class TestPerson {
     @Test
     public void testLeavesHomeWhenStartingToNotBeThere() {
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.HOME);
+                .thenReturn(Activity.HOME);
         person.step();
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.NOT_AT_HOME);
+                .thenReturn(Activity.NOT_AT_HOME);
         person.step();
         verify(this.home).leave(any());
     }
@@ -91,13 +91,13 @@ public class TestPerson {
     @Test
     public void testDoesNotLeaveHomeTwice() {
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.HOME);
+                .thenReturn(Activity.HOME);
         person.step();
-        when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.NOT_AT_HOME);
+        when(this.markovChain.move(Activity.HOME, INITIAL_DATETIME, this.randomNumberGenerator))
+                .thenReturn(Activity.NOT_AT_HOME);
         person.step();
-        when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.OTHER_HOME);
+        when(this.markovChain.move(Activity.NOT_AT_HOME, INITIAL_DATETIME, this.randomNumberGenerator))
+                .thenReturn(Activity.NOT_AT_HOME);
         person.step();
         verify(this.home, times(1)).leave(any());
     }
@@ -105,15 +105,7 @@ public class TestPerson {
     @Test
     public void returnsActiveMetabolicRateWhenActiveAtHome() {
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.HOME);
-        person.step();
-        assertThat(this.person.getCurrentMetabolicRate(), is(equalTo(ACTIVE_METABOLIC_RATE)));
-    }
-
-    @Test
-    public void returnsActiveMetabolicRateWhenActiveAtSomeoneElsesHome() {
-        when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.OTHER_HOME);
+                .thenReturn(Activity.HOME);
         person.step();
         assertThat(this.person.getCurrentMetabolicRate(), is(equalTo(ACTIVE_METABOLIC_RATE)));
     }
@@ -121,7 +113,7 @@ public class TestPerson {
     @Test
     public void returnsActiveMetabolicRateWhenOutside() {
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.NOT_AT_HOME);
+                .thenReturn(Activity.NOT_AT_HOME);
         person.step();
         assertThat(this.person.getCurrentMetabolicRate(), is(equalTo(ACTIVE_METABOLIC_RATE)));
     }
@@ -129,16 +121,9 @@ public class TestPerson {
     @Test
     public void returnsPassiveMetabolicRateWhenAsleep() {
         when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.SLEEP_AT_HOME);
+                .thenReturn(Activity.SLEEP_AT_HOME);
         person.step();
         assertThat(this.person.getCurrentMetabolicRate(), is(equalTo(PASSIVE_METABOLIC_RATE)));
     }
 
-    @Test
-    public void returnsPassiveMetabolicRateWhenAsleepAtOthersHome() {
-        when(this.markovChain.move(INITIAL_ACTIVITY, INITIAL_DATETIME, this.randomNumberGenerator))
-                .thenReturn(Person.Activity.SLEEP_AT_OTHER_HOME);
-        person.step();
-        assertThat(this.person.getCurrentMetabolicRate(), is(equalTo(PASSIVE_METABOLIC_RATE)));
-    }
 }

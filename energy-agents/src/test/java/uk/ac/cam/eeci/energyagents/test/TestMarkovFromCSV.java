@@ -48,12 +48,12 @@ public class TestMarkovFromCSV {
     @Test
     public void testCorrectProbabilitiesOnWeekday() {
         double frequency = this.frequency(NOT_AT_HOME, MIDNIGHT_WEEKDAY, NOT_AT_HOME);
-        assertThat(frequency, is(both(greaterThan(0.85)).and(lessThan(0.90))));
+        assertThat(frequency, is(both(greaterThan(0.88)).and(lessThan(0.93))));
     }
 
     @Test
     public void testCorrectProbabilitiesOnWeekend() {
         double frequency = this.frequency(NOT_AT_HOME, MIDNIGHT_WEEKEND, NOT_AT_HOME);
-        assertThat(frequency, is(both(greaterThan(0.80)).and(lessThan(0.85))));
+        assertThat(frequency, is(both(greaterThan(0.795)).and(lessThan(0.845))));
     }
 }

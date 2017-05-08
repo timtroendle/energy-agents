@@ -29,11 +29,11 @@ public class TestUnheatedBuildings {
 
     private final static long SEED = 123456789L;
     private final static String MARKOV_CSV_FILE_NAME = "test-markov-chain.csv";
-    private final static Duration TIME_STEP_SIZE = Duration.ofMinutes(10);
+    private final static Duration TIME_STEP_SIZE = Duration.ofHours(12);
     private final static ZoneId TIME_ZONE = ZoneOffset.UTC;
-    private final static ZonedDateTime INITIAL_TIME = ZonedDateTime.of(2017, 2, 13, 15, 20, 0, 0, TIME_ZONE);
-    private final static int NUMBER_TIME_STEPS = 5;
-    private final static double INITIAL_DWELLING_TEMPERATURE = 22.0;
+    private final static ZonedDateTime INITIAL_TIME = ZonedDateTime.of(2017, 2, 13, 0, 0, 0, 0, TIME_ZONE);
+    private final static int NUMBER_TIME_STEPS = 8;
+    private final static double INITIAL_DWELLING_TEMPERATURE = 10.0;
     private final static double CONSTANT_OUTDOOR_TEMPERATURE = 24.0;
     private final static double EPSILON = 0.1;
     private final static double ACTIVE_METABOLIC_RATE = 100;
@@ -73,10 +73,10 @@ public class TestUnheatedBuildings {
         List<Dwelling> dwellings = new ArrayList<>();
         double conditionedFloorArea = 100;
         for (int i = 0; i < 10; i++) {
-            Dwelling d = new Dwelling(165000 * conditionedFloorArea, 20000,
-                    Double.POSITIVE_INFINITY, INITIAL_DWELLING_TEMPERATURE,
+            Dwelling d = new Dwelling(165000 * conditionedFloorArea, 200,
+                    0.0, INITIAL_DWELLING_TEMPERATURE,
                     conditionedFloorArea, INITIAL_TIME, TIME_STEP_SIZE,
-                    new HeatingControlStrategyReference(new ClimateChangingControlStrategy(0)),
+                    new HeatingControlStrategyReference(new ClimateChangingControlStrategy(Double.POSITIVE_INFINITY)),
                     this.environmentReference);
             dwellings.add(d);
         }
@@ -101,9 +101,8 @@ public class TestUnheatedBuildings {
     }
 
     /**
-     * Dwellings are not heated and have an (unrealistically) high heat transmission,
-     * hence it is expected that their internal temperature equals the outdoor temperature
-     * after the short simulation.
+     * Dwellings are not heated and hence it is expected that their internal temperature equals the
+     * outdoor temperature after the short simulation.
      */
     @Test
     public void testDwellingTemperatureApproachesOutdoorTemperature() {

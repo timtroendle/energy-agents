@@ -14,7 +14,7 @@ public class Person {
      * Activities of citizens.
      */
     public enum Activity {
-        HOME, SLEEP_AT_HOME, OTHER_HOME, SLEEP_AT_OTHER_HOME, NOT_AT_HOME
+        HOME, SLEEP_AT_HOME, NOT_AT_HOME
     }
 
     public final static Set<Activity> HOME_ACTIVITIES;
@@ -27,10 +27,7 @@ public class Person {
         OWN_HOME_ACTIVITIES.add(Activity.SLEEP_AT_HOME);
         SLEEP_ACTIVITIES = new HashSet<>();
         SLEEP_ACTIVITIES.add(Activity.SLEEP_AT_HOME);
-        SLEEP_ACTIVITIES.add(Activity.SLEEP_AT_OTHER_HOME);
         HOME_ACTIVITIES = new HashSet<>(OWN_HOME_ACTIVITIES);
-        HOME_ACTIVITIES.add(Activity.OTHER_HOME);
-        HOME_ACTIVITIES.add(Activity.SLEEP_AT_OTHER_HOME);
     }
 
     private final HeterogeneousMarkovChain<Activity> markovChain;
