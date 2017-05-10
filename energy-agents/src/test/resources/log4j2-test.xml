@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Loggers>
+        <Logger name="uk.ac.cam.eeci" level="warn">
+        </Logger>
+        <Root level="warn">
+        </Root>
+    </Loggers>
+</Configuration>
