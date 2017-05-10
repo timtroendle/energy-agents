@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -80,7 +81,7 @@ public class ScenarioBuilder {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", databasePath));
             simulation = readScenario(conn, databasePath, outputPath);
-        } catch (ClassNotFoundException|SQLException ex) {
+        } catch (ClassNotFoundException|SQLException|IOException ex) {
             LOGGER.error(String.format("Failed to read scenario from %s.", databasePath), ex);
             throw new IOException("Failed to read scenario");
         } finally {
@@ -96,7 +97,7 @@ public class ScenarioBuilder {
     }
 
     private static CitySimulation readScenario(Connection con, String inputPath, String outputPath)
-            throws SQLException {
+            throws SQLException, IOException {
         SimulationParameter parameters = readSimulationParameters(con);
         HeatingControlStrategyFactory heatingControlStrategyFactory = readHeatingControlStrategyFactory(con);
         EnvironmentReference environmentReference = readEnvironment(con, parameters.timeStepSize);
@@ -121,8 +122,12 @@ public class ScenarioBuilder {
                 .atZone(TIME_ZONE);
     }
 
-    private static LocalTime readLocalTime(ResultSet rs, String columnName) throws SQLException {
-        return LocalTime.parse(rs.getString(columnName), DateTimeFormatter.ISO_LOCAL_TIME);
+    private static LocalTime readLocalTime(ResultSet rs, String columnName) throws SQLException, IOException {
+        try {
+            return LocalTime.parse(rs.getString(columnName), DateTimeFormatter.ISO_LOCAL_TIME);
+        } catch (DateTimeParseException e) {
+            throw new IOException(e);
+        }
     }
 
     private static HeatingControlStrategyFactory.ControlStrategyType readControlStrategyType(ResultSet rs, String columnName) throws SQLException {
@@ -173,7 +178,7 @@ public class ScenarioBuilder {
     }
 
     private static Map<Integer, PersonReference> readPeople(Connection conn, Map<Integer, DwellingReference> dwellings,
-                                                    SimulationParameter parameters) throws SQLException {
+                                                    SimulationParameter parameters) throws SQLException, IOException {
         Map<Integer, HeterogeneousMarkovChain<Person.Activity>> markovChains = readMarkovChains(conn, parameters);
         Map<Integer, Person> people = new HashMap<>();
         Statement stat = conn.createStatement();
@@ -211,7 +216,7 @@ public class ScenarioBuilder {
 
     private static Map<Integer, HeterogeneousMarkovChain<Person.Activity>> readMarkovChains(Connection conn,
                                                                                             SimulationParameter parameters)
-            throws SQLException {
+            throws SQLException, IOException {
         Map<Integer, String> markovChainTableNames = new HashMap<>();
         Statement stat = conn.createStatement();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", SQL_TABLES_MARKOV_CHAINS));
@@ -233,7 +238,8 @@ public class ScenarioBuilder {
     }
 
     private static HeterogeneousMarkovChain<Person.Activity> readMarkovChain(Connection conn, String tablename,
-                                                                             SimulationParameter parameters) throws SQLException {
+                                                                             SimulationParameter parameters)
+            throws SQLException, IOException {
         List<MarkovChainReader.MarkovChainEntry> entries = new ArrayList<>();
         Statement stat = conn.createStatement();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", tablename));
@@ -270,7 +276,8 @@ public class ScenarioBuilder {
         return parameters.get(0); // there could be more, but at the moment don't care
     }
 
-    private static HeatingControlStrategyFactory readHeatingControlStrategyFactory(Connection conn) throws SQLException {
+    private static HeatingControlStrategyFactory readHeatingControlStrategyFactory(Connection conn)
+            throws SQLException, IOException {
         List<HeatingControlStrategyFactory> factories = new ArrayList<>();
         Statement stat = conn.createStatement();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", SQL_TABLES_PARAMETERS));
