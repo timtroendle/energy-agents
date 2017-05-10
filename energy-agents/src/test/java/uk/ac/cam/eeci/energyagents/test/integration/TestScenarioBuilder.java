@@ -97,19 +97,17 @@ public class TestScenarioBuilder {
     }
 
     @Test
-    public void resultContainsValidThermalPowerRecord() throws ClassNotFoundException, SQLException, IOException {
+    public void resultDoesNotContainThermalPowerRecord() throws ClassNotFoundException, SQLException, IOException {
+        String outputPath = this.tempOutPutFile.getCanonicalPath();
         this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), this.tempOutPutFile.getCanonicalPath());
         new Conductor(this.citySimulation).run();
 
-        Map<Integer, TimeSeries<Double>> powerTimeSeries = readThermalPowerRecordFromDB();
+        List<String> tableNames = getTableNames(outputPath);
 
-        assertThat(powerTimeSeries.size(), is(equalTo(NUMBER_DWELLINGS)));
-        for (TimeSeries<Double> timeSeries : powerTimeSeries.values()) {
-            assertThat(timeSeries.getIndex(), Matchers.contains(TIME_INDEX));
-        }
-        List<Integer> sortedIndexSet = new ArrayList<>(powerTimeSeries.keySet());
-        Collections.sort(sortedIndexSet);
-        assertThat(sortedIndexSet, is(equalTo(DWELLING_INDICES)));
+        assertThat(tableNames, not(hasItems(
+                ScenarioBuilder.THERMAL_POWER_DATA_POINT_NAME
+                ))
+        );
     }
 
     @Test
@@ -134,16 +132,7 @@ public class TestScenarioBuilder {
         this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), outputPath);
         new Conductor(this.citySimulation).run();
 
-        List<String> tableNames = new ArrayList<>();
-        try (Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", outputPath))) {
-            try (Statement stat = conn.createStatement()){
-                try (ResultSet rs = stat.executeQuery("SELECT name FROM sqlite_master WHERE type='table';")) {
-                    while (rs.next()) {
-                        tableNames.add(rs.getString(1));
-                    }
-                }
-            }
-        }
+        List<String> tableNames = getTableNames(outputPath);
 
         assertThat(tableNames, hasItems(
                 ScenarioBuilder.SQL_TABLES_DWELLINGS, ScenarioBuilder.SQL_TABLES_PEOPLE,
@@ -162,7 +151,6 @@ public class TestScenarioBuilder {
 
         Map<Integer, TimeSeries<String>> activityTimeSeries1 = readActivityRecordFromDB();
         Map<Integer, TimeSeries<Double>> temperatureTimeSeries1 = readTemperatureRecordFromDB();
-        Map<Integer, TimeSeries<Double>> thermalPowerTimeSeries1 = readThermalPowerRecordFromDB();
 
         // ... and run again
         Utils.resetScienceOS();
@@ -171,11 +159,23 @@ public class TestScenarioBuilder {
 
         Map<Integer, TimeSeries<String>> activityTimeSeries2 = readActivityRecordFromDB();
         Map<Integer, TimeSeries<Double>> temperatureTimeSeries2 = readTemperatureRecordFromDB();
-        Map<Integer, TimeSeries<Double>> thermalPowerTimeSeries2 = readThermalPowerRecordFromDB();
 
         assertThat(activityTimeSeries1, is(equalTo(activityTimeSeries2)));
         assertThat(temperatureTimeSeries1, is(equalTo(temperatureTimeSeries2)));
-        assertThat(thermalPowerTimeSeries1, is(equalTo(thermalPowerTimeSeries2)));
+    }
+
+    private List<String> getTableNames(String outputPath) throws SQLException {
+        List<String> tableNames = new ArrayList<>();
+        try (Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", outputPath))) {
+            try (Statement stat = conn.createStatement()){
+                try (ResultSet rs = stat.executeQuery("SELECT name FROM sqlite_master WHERE type='table';")) {
+                    while (rs.next()) {
+                        tableNames.add(rs.getString(1));
+                    }
+                }
+            }
+        }
+        return tableNames;
     }
 
     private Map<Integer, TimeSeries<Double>> readTemperatureRecordFromDB()
@@ -187,41 +187,6 @@ public class TestScenarioBuilder {
 
         List<Triplet<Integer, ZonedDateTime, Double>> entries = new ArrayList<>();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", ScenarioBuilder.TEMPERATURE_DATA_POINT_NAME));
-        while (rs.next()) {
-            entries.add(new Triplet<>(
-                    rs.getInt(2),
-                    Instant.ofEpochMilli(rs.getLong(1)).atZone(ZoneOffset.UTC),
-                    rs.getDouble(3)
-            ));
-        }
-        rs.close();
-        conn.close();
-
-        Map<Integer, TimeSeries<Double>> timeSeries = new HashMap<>();
-        List<Integer> indices = entries.stream().map(Triplet::getValue0).collect(Collectors.toList());
-        for (Integer index : indices) {
-            TimeSeries<Double> indexTimeSeries = new TimeSeries<>();
-            timeSeries.put(index, indexTimeSeries);
-            List<Pair<ZonedDateTime, Double>> timeSeriesEntries = entries.stream()
-                    .filter(entry -> entry.getValue0().equals(index))
-                    .map(entry -> new Pair<>(entry.getValue1(), entry.getValue2()))
-                    .collect(Collectors.toList());
-            for (Pair<ZonedDateTime, Double> timeSeriesEntry : timeSeriesEntries) {
-                indexTimeSeries.add(timeSeriesEntry.getValue0(), timeSeriesEntry.getValue1());
-            }
-        }
-        return timeSeries;
-    }
-
-    private Map<Integer, TimeSeries<Double>> readThermalPowerRecordFromDB()
-            throws IOException, SQLException, ClassNotFoundException {
-
-        Class.forName("org.sqlite.JDBC");
-        Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", this.tempOutPutFile.getCanonicalPath()));
-        Statement stat = conn.createStatement();
-
-        List<Triplet<Integer, ZonedDateTime, Double>> entries = new ArrayList<>();
-        ResultSet rs = stat.executeQuery(String.format("select * from %s;", ScenarioBuilder.THERMAL_POWER_DATA_POINT_NAME));
         while (rs.next()) {
             entries.add(new Triplet<>(
                     rs.getInt(2),

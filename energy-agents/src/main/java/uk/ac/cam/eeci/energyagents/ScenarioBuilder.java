@@ -25,6 +25,9 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_PAR_INITIAL_DATETIME = "initialDateTime";
     public final static String SQL_COLUMNS_PAR_TIME_STEP_SIZE = "timeStepSize_in_min";
     public final static String SQL_COLUMNS_PAR_NUMBER_TIME_STEPS = "numberTimeSteps";
+    public final static String SQL_COLUMNS_PAR_LOG_THERMAL_POWER = "logThermalPower";
+    public final static String SQL_COLUMNS_PAR_LOG_TEMPERATURE = "logTemperature";
+    public final static String SQL_COLUMNS_PAR_LOG_ACTIVITY = "logActivity";
     public final static String SQL_COLUMNS_PAR_SET_POINT_WHILE_HOME = "setPointWhileHome";
     public final static String SQL_COLUMNS_PAR_SET_POINT_WHILE_ASLEEP = "setPointWhileAsleep";
     public final static String SQL_COLUMNS_PAR_WAKE_UP_TIME = "wakeUpTime";
@@ -66,11 +69,18 @@ public class ScenarioBuilder {
         private final ZonedDateTime initialTime;
         private final Duration timeStepSize;
         private final int numberTimeSteps;
+        private final boolean logThermalPower;
+        private final boolean logTemperature;
+        private final boolean logActivity;
 
-        private SimulationParameter(ZonedDateTime initialTime, Duration timeStepSize, int numberTimeSteps) {
+        private SimulationParameter(ZonedDateTime initialTime, Duration timeStepSize, int numberTimeSteps,
+                                    boolean logThermalPower, boolean logTemperature, boolean logActivity) {
             this.initialTime = initialTime;
             this.timeStepSize = timeStepSize;
             this.numberTimeSteps = numberTimeSteps;
+            this.logThermalPower = logThermalPower;
+            this.logTemperature = logTemperature;
+            this.logActivity = logActivity;
         }
     }
 
@@ -104,7 +114,8 @@ public class ScenarioBuilder {
         Map<Integer, DwellingReference> dwellingReferences = readDwellings(con, parameters, environmentReference,
                 heatingControlStrategyFactory);
         Map<Integer, PersonReference> peopleReferences = readPeople(con, dwellingReferences, parameters);
-        DataLoggerReference dataLoggerReference = createDataLogger(dwellingReferences, peopleReferences, inputPath, outputPath);
+        DataLoggerReference dataLoggerReference = createDataLogger(dwellingReferences, peopleReferences, parameters,
+                inputPath, outputPath);
         return new CitySimulation(
                 dwellingReferences.values(),
                 peopleReferences.values(),
@@ -265,7 +276,10 @@ public class ScenarioBuilder {
             parameters.add(new SimulationParameter(
                     readTimeStamp(rs, SQL_COLUMNS_PAR_INITIAL_DATETIME),
                     Duration.ofMinutes(rs.getInt(SQL_COLUMNS_PAR_TIME_STEP_SIZE)),
-                    rs.getInt(SQL_COLUMNS_PAR_NUMBER_TIME_STEPS)
+                    rs.getInt(SQL_COLUMNS_PAR_NUMBER_TIME_STEPS),
+                    rs.getBoolean(SQL_COLUMNS_PAR_LOG_THERMAL_POWER),
+                    rs.getBoolean(SQL_COLUMNS_PAR_LOG_TEMPERATURE),
+                    rs.getBoolean(SQL_COLUMNS_PAR_LOG_ACTIVITY)
             ));
         }
         rs.close();
@@ -302,23 +316,30 @@ public class ScenarioBuilder {
 
     private static DataLoggerReference createDataLogger(Map<Integer, DwellingReference> dwellings,
                                                         Map<Integer, PersonReference> people,
+                                                        SimulationParameter parameters,
                                                         String inputPath, String outputPath) {
         Set<DataPoint> dataPoints = new HashSet<>();
-        dataPoints.add(new DataPoint<>(
-                TEMPERATURE_DATA_POINT_NAME,
-                dwellings,
-                (DwellingReference::getCurrentTemperature)
-        ));
-        dataPoints.add(new DataPoint<>(
-                THERMAL_POWER_DATA_POINT_NAME,
-                dwellings,
-                (DwellingReference::getCurrentThermalPower)
-        ));
-        dataPoints.add(new DataPoint<>(
-                ACTIVITY_DATA_POINT_NAME,
-                people,
-                (PersonReference::getCurrentActivity)
-        ));
+        if (parameters.logTemperature) {
+            dataPoints.add(new DataPoint<>(
+                    TEMPERATURE_DATA_POINT_NAME,
+                    dwellings,
+                    (DwellingReference::getCurrentTemperature)
+            ));
+        }
+        if (parameters.logThermalPower) {
+            dataPoints.add(new DataPoint<>(
+                    THERMAL_POWER_DATA_POINT_NAME,
+                    dwellings,
+                    (DwellingReference::getCurrentThermalPower)
+            ));
+        }
+        if (parameters.logActivity) {
+            dataPoints.add(new DataPoint<>(
+                    ACTIVITY_DATA_POINT_NAME,
+                    people,
+                    (PersonReference::getCurrentActivity)
+            ));
+        }
         DataLogger dataLogger = new DataLogger(
                 dataPoints.stream().map(DataPointReference::new).collect(Collectors.toSet()),
                 inputPath,
