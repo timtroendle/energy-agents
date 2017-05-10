@@ -47,18 +47,6 @@ public class Simulation implements ISimulation {
             updates[i] = tilerefs[i].update();
         }
         CompletableFuture.allOf(updates).get();
-        printState();
-    }
-
-    public void printState() throws ExecutionException, InterruptedException {
-        for(int n=0; n<nTiles; ++n) {
-            printState(n).get();
-        }
-        System.out.println("");
-    }
-
-    public CompletableFuture<Void> printState(int n) {
-        return tilerefs[n].printState(n*tileSize, 0);
     }
 
     @Override
