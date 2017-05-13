@@ -35,7 +35,7 @@ public class TestUnheatedBuildings {
     private final static int NUMBER_TIME_STEPS = 8;
     private final static double INITIAL_DWELLING_TEMPERATURE = 10.0;
     private final static double CONSTANT_OUTDOOR_TEMPERATURE = 24.0;
-    private final static double EPSILON = 0.1;
+    private final static double EPSILON = 1.0;
     private final static double ACTIVE_METABOLIC_RATE = 100;
     private final static double PASSIVE_METABOLIC_RATE = 30;
     private Conductor conductor;

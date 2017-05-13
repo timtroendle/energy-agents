@@ -98,7 +98,7 @@ public class Dwelling {
         this.environmentReference = environmentReference;
         this.maximumHeatingPower = maximumHeatingPower;
 
-        double windowAndWallArea = roomHeight * floorArea * 4;
+        double windowAndWallArea = roomHeight * Math.sqrt(floorArea) * 4;
         double windowArea = windowAndWallArea * windowToWallRatio;
         double wallArea = windowAndWallArea - windowArea;
         double A_op = wallArea + 2 * floorArea;
