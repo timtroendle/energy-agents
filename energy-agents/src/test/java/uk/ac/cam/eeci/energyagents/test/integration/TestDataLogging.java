@@ -72,7 +72,7 @@ public class TestDataLogging {
         this.temperatureDataPoint =  new DataPoint<>(
                 "temperature",
                 indexedDwellings,
-                (DwellingReference::getCurrentTemperature)
+                (DwellingReference::getCurrentAirTemperature)
         );
         this.thermalPowerDataPoint =  new DataPoint<>(
                 "thermalPower",
@@ -115,8 +115,8 @@ public class TestDataLogging {
     private void initDwellings() {
         when(this.dwelling1.step()).thenReturn(CompletableFuture.completedFuture(null));
         when(this.dwelling2.step()).thenReturn(CompletableFuture.completedFuture(null));
-        when(this.dwelling1.getCurrentTemperature()).thenReturn(20.0);
-        when(this.dwelling2.getCurrentTemperature()).thenReturn(30.0);
+        when(this.dwelling1.getCurrentAirTemperature()).thenReturn(20.0);
+        when(this.dwelling2.getCurrentAirTemperature()).thenReturn(30.0);
         when(this.dwelling1.getCurrentThermalPower()).thenReturn(100.1);
         when(this.dwelling2.getCurrentThermalPower()).thenReturn(-87.2);
     }

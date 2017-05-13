@@ -37,11 +37,19 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_ENV_INDEX = "index";
     public final static String SQL_COLUMNS_ENV_TEMPERATURE = "temperature";
     public final static String SQL_COLUMNS_DW_INDEX = "index";
-    public final static String SQL_COLUMNS_DW_HEAT_MASS_CAPACITY = "heatMassCapacity";
-    public final static String SQL_COLUMNS_DW_HEAT_TRANSMISSION = "heatTransmission";
+    public final static String SQL_COLUMNS_DW_THERMAL_MASS_CAPACITY = "thermalMassCapacity";
+    public final static String SQL_COLUMNS_DW_THERMAL_MASS_AREA = "thermalMassArea";
+    public final static String SQL_COLUMNS_DW_FLOOR_AREA = "floorArea";
+    public final static String SQL_COLUMNS_DW_ROOM_HEIGHT = "roomHeight";
+    public final static String SQL_COLUMNS_DW_WINDOW_TO_WALL_RATIO = "windowToWallRatio";
+    public final static String SQL_COLUMNS_DW_U_VALUE_WALL = "uWall";
+    public final static String SQL_COLUMNS_DW_U_VALUE_ROOF = "uRoof";
+    public final static String SQL_COLUMNS_DW_U_VALUE_FLOOR = "uFloor";
+    public final static String SQL_COLUMNS_DW_U_VALUE_WINDOW = "uWindow";
+    public final static String SQL_COLUMNS_DW_TR_ADJ_GROUND = "transmissionAdjustmentGround";
+    public final static String SQL_COLUMNS_DW_NATURAL_VENTILATION_RATE = "naturalVentilationRate";
     public final static String SQL_COLUMNS_DW_INITIAL_TEMPERATURE = "initialTemperature";
     public final static String SQL_COLUMNS_DW_MAX_HEATING_POWER = "maxHeatingPower";
-    public final static String SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA = "conditionedFloorArea";
     public final static String SQL_COLUMNS_DW_HEATING_CONTROL_STRATEGY = "heatingControlStrategy";
     public final static String SQL_COLUMNS_PPL_DWELLING_ID = "dwellingId";
     public final static String SQL_COLUMNS_PPL_MARKOV_ID = "markovChainId";
@@ -170,17 +178,25 @@ public class ScenarioBuilder {
             dwellings.put(
                     rs.getInt(SQL_COLUMNS_DW_INDEX),
                     new DwellingReference(new Dwelling(
-                        rs.getDouble(SQL_COLUMNS_DW_HEAT_MASS_CAPACITY),
-                        rs.getDouble(SQL_COLUMNS_DW_HEAT_TRANSMISSION),
-                        rs.getDouble(SQL_COLUMNS_DW_MAX_HEATING_POWER),
-                        rs.getDouble(SQL_COLUMNS_DW_INITIAL_TEMPERATURE),
-                        rs.getDouble(SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA),
-                        parameters.initialTime,
-                        parameters.timeStepSize,
-                        new HeatingControlStrategyReference(controlStrategyFactory.build(
+                            rs.getDouble(SQL_COLUMNS_DW_THERMAL_MASS_CAPACITY),
+                            rs.getDouble(SQL_COLUMNS_DW_THERMAL_MASS_AREA),
+                            rs.getDouble(SQL_COLUMNS_DW_FLOOR_AREA),
+                            rs.getDouble(SQL_COLUMNS_DW_ROOM_HEIGHT),
+                            rs.getDouble(SQL_COLUMNS_DW_WINDOW_TO_WALL_RATIO),
+                            rs.getDouble(SQL_COLUMNS_DW_U_VALUE_WALL),
+                            rs.getDouble(SQL_COLUMNS_DW_U_VALUE_ROOF),
+                            rs.getDouble(SQL_COLUMNS_DW_U_VALUE_FLOOR),
+                            rs.getDouble(SQL_COLUMNS_DW_U_VALUE_WINDOW),
+                            rs.getDouble(SQL_COLUMNS_DW_TR_ADJ_GROUND),
+                            rs.getDouble(SQL_COLUMNS_DW_NATURAL_VENTILATION_RATE),
+                            rs.getDouble(SQL_COLUMNS_DW_MAX_HEATING_POWER),
+                            rs.getDouble(SQL_COLUMNS_DW_INITIAL_TEMPERATURE),
+                            parameters.initialTime,
+                            parameters.timeStepSize,
+                            new HeatingControlStrategyReference(controlStrategyFactory.build(
                                 readControlStrategyType(rs, SQL_COLUMNS_DW_HEATING_CONTROL_STRATEGY))
-                        ),
-                        env
+                            ),
+                            env
                     ))
             );
         }
@@ -323,7 +339,7 @@ public class ScenarioBuilder {
             dataPoints.add(new DataPoint<>(
                     TEMPERATURE_DATA_POINT_NAME,
                     dwellings,
-                    (DwellingReference::getCurrentTemperature)
+                    (DwellingReference::getCurrentAirTemperature)
             ));
         }
         if (parameters.logThermalPower) {
