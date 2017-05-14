@@ -12,6 +12,9 @@ import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Builds CitySimulations from database input files.
+ */
 public class ScenarioBuilder {
 
     private final static Logger LOGGER = LogManager.getLogger(ScenarioBuilder.class.getName());
@@ -92,6 +95,13 @@ public class ScenarioBuilder {
         }
     }
 
+    /**
+     * Reads a CitySimulation Scenario from database.
+     * @param databasePath the path to the input database.
+     * @param outputPath the path to the database to which results shall be written
+     * @return a CitySimulation
+     * @throws IOException whenever reading from input database fails
+     */
     public static CitySimulation readScenario(String databasePath, String outputPath) throws IOException {
         CitySimulation simulation = null;
         Connection conn = null;

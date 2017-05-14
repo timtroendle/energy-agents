@@ -83,10 +83,18 @@ public class Person {
         this.currentTime = this.currentTime.plus(this.timeStepSize);
     }
 
+    /**
+     *
+     * @return the current activity
+     */
     public Activity getCurrentActivity() {
         return this.currentActivity;
     }
 
+    /**
+     *
+     * @return the metabolic rate depending on current activity
+     */
     public double getCurrentMetabolicRate() {
         if (SLEEP_ACTIVITIES.contains(this.currentActivity)) {
             return this.passiveMetabolicRate;

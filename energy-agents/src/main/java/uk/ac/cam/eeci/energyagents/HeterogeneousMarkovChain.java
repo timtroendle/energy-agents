@@ -7,12 +7,23 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * A time heterogeneous Markov chain for with different probabilities for one week.
+ *
+ * @param <T> The type of the states of the Markov chain.
+ */
 public class HeterogeneousMarkovChain<T> {
 
     private final Map<LocalTime, MarkovChain<T>> weekdayChain;
     private final Map<LocalTime, MarkovChain<T>> weekendChain;
     private final ZoneId timeZone;
 
+    /**
+     *
+     * @param weekdayChain markov chain for each time of the weekday
+     * @param weekendChain markov chains for each time of the weekend day
+     * @param timeZone the time zone
+     */
     public HeterogeneousMarkovChain(Map<LocalTime, MarkovChain<T>> weekdayChain,
                                     Map<LocalTime, MarkovChain<T>> weekendChain,
                                     ZoneId timeZone) {
@@ -21,6 +32,14 @@ public class HeterogeneousMarkovChain<T> {
         this.timeZone = timeZone;
     }
 
+    /**
+     * Move to the next Markov state.
+     *
+     * @param currentState The current state of the Markov chain.
+     * @param dateTime the current time
+     * @param randomNumberGenerator an object that returns a random number between 0 and 1
+     * @return the next state of the Markov chain
+     */
     public T move(T currentState, ZonedDateTime dateTime, Random randomNumberGenerator) {
         Map<LocalTime, MarkovChain<T>> dayChain = null;
         switch(dateTime.getDayOfWeek()) {
@@ -48,15 +67,30 @@ public class HeterogeneousMarkovChain<T> {
     }
 
 
+    /**
+     * A time invariant first order Markov chain.
+     * @param <T> The type of the states.
+     */
     public static class MarkovChain<T> {
 
         private final Map<Pair<T, T>, Double> probabilities;
 
+        /**
+         *
+         * @param probabilities transition probabilities between states
+         */
         public MarkovChain(Map<Pair<T, T>, Double> probabilities) {
             this.probabilities = probabilities;
             this.validateChain();
         }
 
+        /**
+         * Move to the next state.
+         *
+         * @param currentState the current state of the Markov chain
+         * @param randomNumberGenerator an object that returns a random number between 0 and 1
+         * @return the next state of the Markov chain
+         */
         public T move(T currentState, Random randomNumberGenerator) {
             List<Pair<T, T>> possibleTransitions = this.possibleTransitions(currentState)
                 .collect(Collectors.toList());

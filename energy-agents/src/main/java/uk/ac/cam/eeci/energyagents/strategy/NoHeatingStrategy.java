@@ -8,6 +8,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * A HeatingStrategy that never heats.
+ * <br><br>
+ * Comfort for purists.
+ */
 public class NoHeatingStrategy extends HeatingControlStrategy {
 
 

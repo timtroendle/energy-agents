@@ -9,6 +9,17 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+/**
+ * A simple energy model of a dwelling.
+ * <br><br>
+ * Consisting of one thermal capacity and five resistances, this model is derived from the
+ * simple hourly dynamic model of the ISO 13790. It models heating energy demand only.
+ * <br><br>
+ * The dwelling model is a one zone mode with a squared floor area. The entire floor area is
+ * supposed to be heated. The dwelling consists of only one storey. Ventilation and infiltration
+ * is limited to constant natural ventilation, and heat gains are limited to metabolic heat
+ * gains.
+ */
 public class Dwelling {
 
     // Nomenclature of internal variables and parameters derived from the ISO 13790 standard
@@ -47,15 +58,6 @@ public class Dwelling {
     private ZonedDateTime currentTime;
 
     /**
-     * A simple energy model of a dwelling.
-     *
-     * Consisting of one thermal capacity and five resistances, this model is derived from the
-     * simple hourly dynamic model of the ISO 13790. It models heating energy demand only.
-     *
-     * The dwelling model is a one zone mode with a squared floor area. The entire floor area is
-     * supposed to be heated. The dwelling consists of only one storey. Ventilation and infiltration
-     * is limited to constant natural ventilation, and heat gains are limited to metabolic heat
-     * gains.
      *
      * @param thermalMassCapacity capacity of the dwelling's thermal mass [J/K]
      * @param thermalMassArea area of the dwelling's thermal mass [m^2]
@@ -184,10 +186,20 @@ public class Dwelling {
         return this.currentThermalPower;
     }
 
+    /**
+     * Whenever a person wants to enter the dwelling.
+     *
+     * @param person the person to enter
+     */
     public void enter(PersonReference person) {
         this.peopleInDwelling.add(person);
     }
 
+    /**
+     * Whenever a person wants to leave the dwelling.
+     *
+     * @param person the person to leave
+     */
     public void leave(PersonReference person) {
         this.peopleInDwelling.remove(person);
     }

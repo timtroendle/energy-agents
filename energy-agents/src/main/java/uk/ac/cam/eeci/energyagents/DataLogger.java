@@ -7,6 +7,9 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * DataLogger logs data points during the simulation at each time step.
+ */
 public class DataLogger {
 
     public final static String METADATA_TABLE_NAME = "metadata";
@@ -14,8 +17,12 @@ public class DataLogger {
     private final String inputFilename;
     private final String outputFilename;
 
+
     /**
-     * Logs data points during the simulation.
+     *
+     * @param dataPoints The DataPoints to be logged.
+     * @param inputFilename The input file which is copied to the output.
+     * @param outputFilename The output file name where data gets logged to.
      */
     public DataLogger(Collection<DataPointReference> dataPoints, String inputFilename, String outputFilename) {
         this.dataPoints = new HashSet<>(dataPoints);
@@ -23,6 +30,10 @@ public class DataLogger {
         this.outputFilename = outputFilename;
     }
 
+    /**
+     * Steps the DataLogger, triggering it to log data.
+     * @param currentTime The current simulation time.
+     */
     public CompletableFuture<Void> step(ZonedDateTime currentTime) {
         CompletableFuture<Void>[] steps = new CompletableFuture[this.dataPoints.size()];
         int i = 0;
@@ -33,6 +44,10 @@ public class DataLogger {
         return CompletableFuture.allOf(steps);
     }
 
+    /**
+     * Writes all logged data to the previously specified file.
+     * @param metaData meta data to be written to the output.
+     */
     public CompletableFuture<Void> write(HashMap<String, String> metaData) {
         CompletableFuture<Void> steps = CompletableFuture.completedFuture(null);
         steps.thenRun(this::copyInput);

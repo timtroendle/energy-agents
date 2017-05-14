@@ -13,6 +13,9 @@ import org.apache.logging.log4j.core.LoggerContext;
 import java.io.IOException;
 
 
+/**
+ * The command line interface of energy-agents.
+ */
 public class CommandLineInterface {
 
     private final static String TOOL_NAME = "energy-agents";
