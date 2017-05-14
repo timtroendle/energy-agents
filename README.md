@@ -1,5 +1,7 @@
 # Energy Agents
 
+[![DOI](https://zenodo.org/badge/81457869.svg)](https://zenodo.org/badge/latestdoi/81457869)
+
 A micro-simulation model for determining residential energy demands in urban energy systems.
 
 Each dwelling and each occupant in urban built environments is simulated individually.
