@@ -4,7 +4,7 @@
     <groupId>uk.ac.cam.eeci</groupId>
     <artifactId>simulation-framework</artifactId>
     <packaging>jar</packaging>
-    <version>0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>simulation-framework</name>
     <url>http://maven.apache.org</url>
     <properties>
