@@ -35,7 +35,7 @@ public class TestUnheatedBuildings {
     private final static int NUMBER_TIME_STEPS = 8;
     private final static double INITIAL_DWELLING_TEMPERATURE = 10.0;
     private final static double CONSTANT_OUTDOOR_TEMPERATURE = 24.0;
-    private final static double EPSILON = 0.1;
+    private final static double EPSILON = 1.0;
     private final static double ACTIVE_METABOLIC_RATE = 100;
     private final static double PASSIVE_METABOLIC_RATE = 30;
     private Conductor conductor;
@@ -71,13 +71,14 @@ public class TestUnheatedBuildings {
 
     private List<Dwelling> createDwellings() {
         List<Dwelling> dwellings = new ArrayList<>();
-        double conditionedFloorArea = 100;
+        double floorArea = 100;
         for (int i = 0; i < 10; i++) {
-            Dwelling d = new Dwelling(165000 * conditionedFloorArea, 200,
-                    0.0, INITIAL_DWELLING_TEMPERATURE,
-                    conditionedFloorArea, INITIAL_TIME, TIME_STEP_SIZE,
-                    new HeatingControlStrategyReference(new ClimateChangingControlStrategy(Double.POSITIVE_INFINITY)),
-                    this.environmentReference);
+            Dwelling d = new Dwelling(165000 * floorArea, 2.5 * floorArea, floorArea,
+                3, 0.19, 0.26, 0.12, 0.40, 1.95,
+                0.91, 0.65, 0,
+                INITIAL_DWELLING_TEMPERATURE, INITIAL_TIME, TIME_STEP_SIZE,
+                new HeatingControlStrategyReference(new ClimateChangingControlStrategy(Double.POSITIVE_INFINITY)),
+                this.environmentReference);
             dwellings.add(d);
         }
         return dwellings;
@@ -107,7 +108,7 @@ public class TestUnheatedBuildings {
     @Test
     public void testDwellingTemperatureApproachesOutdoorTemperature() {
         this.conductor.run();
-        assertThat(this.dwellings.get(0).getCurrentTemperature(), is(closeTo(CONSTANT_OUTDOOR_TEMPERATURE, EPSILON)));
+        assertThat(this.dwellings.get(0).getCurrentAirTemperature(), is(closeTo(CONSTANT_OUTDOOR_TEMPERATURE, EPSILON)));
     }
 
 }

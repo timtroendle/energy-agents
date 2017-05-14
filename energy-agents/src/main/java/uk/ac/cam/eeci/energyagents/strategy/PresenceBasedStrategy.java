@@ -12,11 +12,24 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * A HeatingControlStrategy that is solely based on people presence in a Dwelling.
+ * <br><br>
+ * There are three set points:
+ * * one set point while at least one person is active at home
+ * * one set point while there is at least someone at home, but not active
+ * * when no one is home, the heating system will be off.
+ */
 public class PresenceBasedStrategy extends HeatingControlStrategy {
 
     private final double setPointWhileActiveAtHome;
     private final double setPointWhileSleepingAtHome;
 
+    /**
+     *
+     * @param setPointWhileActiveAtHome active set point whenever at least one person is active
+     * @param setPointWhileSleepingAtHome active set point whenever at least someone home but no one active
+     */
     public PresenceBasedStrategy(double setPointWhileActiveAtHome, double setPointWhileSleepingAtHome) {
         this.setPointWhileActiveAtHome = setPointWhileActiveAtHome;
         this.setPointWhileSleepingAtHome = setPointWhileSleepingAtHome;

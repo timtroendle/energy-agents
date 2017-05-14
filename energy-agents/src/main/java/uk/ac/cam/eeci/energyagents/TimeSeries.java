@@ -5,6 +5,11 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+/**
+ * A time series of values.
+ *
+ * @param <K> the type of the values of the time series
+ */
 public class TimeSeries<K> {
 
     private List<ZonedDateTime> index;
@@ -15,19 +20,37 @@ public class TimeSeries<K> {
         this.values = new ArrayList<>();
     }
 
+    /**
+     * Adds a new value to the end of the time series.
+     *
+     * @param timeStamp the time stamp of the new entry
+     * @param value the value of the new entry
+     */
     public void add(ZonedDateTime timeStamp, K value) {
         this.index.add(timeStamp);
         this.values.add(value);
     }
 
+    /**
+     *
+     * @return all values in the time series
+     */
     public List<K> getValues() {
         return this.values;
     }
 
+    /**
+     *
+     * @return the time index of the time series
+     */
     public List<ZonedDateTime> getIndex() {
         return this.index;
     }
 
+    /**
+     *
+     * @return the constant time step size if time step size is constant
+     */
     public Optional<Duration> getConstantTimeStepSize() {
         List<Duration> timeStepSizes = new ArrayList<>();
         List<ZonedDateTime> index = this.getIndex();
@@ -43,6 +66,10 @@ public class TimeSeries<K> {
         return Optional.of(reference);
     }
 
+    /**
+     *
+     * @return the lenght of the time series
+     */
     public int size() {
         return this.index.size();
     }

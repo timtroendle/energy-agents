@@ -9,6 +9,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * A data point defines a time varying data source to be logged.
+ *
+ * @param <K> The type from which data shall be logged.
+ * @param <T> Data type to be logged.
+ */
 public class DataPoint<K, T> {
 
     private final List<T> values;
@@ -18,6 +24,12 @@ public class DataPoint<K, T> {
     private final Function<K, CompletableFuture<T>> valueSupplier;
     private final String name;
 
+    /**
+     *
+     * @param name name of the data point
+     * @param dataPointSources the data point sources, a map from unique ids to data point sources
+     * @param valueSupplier a function through which the current value of the data point can be accessed.
+     */
     public DataPoint(String name, Map<Integer, K> dataPointSources, Function<K, CompletableFuture<T>> valueSupplier) {
         this.name = name;
         this.values = new ArrayList<>();
@@ -45,6 +57,10 @@ public class DataPoint<K, T> {
                 .thenRun(() -> this.index.add(currentTime));
     }
 
+    /**
+     *
+     * @return the complete record of historic values of the data point
+     */
     public Map<Integer, TimeSeries<T>> getRecord(){
         List<TimeSeries<T>> timeSeries = new ArrayList<>();
         for (int i = 0; i < this.dataPointSources.size(); i++) {

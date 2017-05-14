@@ -4,9 +4,9 @@
                              http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>uk.ac.cam.eeci</groupId>
-    <artifactId>energy-agents</artifactId>
+    <artifactId>energy-agents-parent</artifactId>
     <packaging>pom</packaging>
-    <version>1.0</version>
+    <version>1.0.0</version>
     <name>energy-agents-parent</name>
     <modules>
         <module>simulation-framework</module>

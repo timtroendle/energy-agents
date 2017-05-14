@@ -8,9 +8,13 @@ import java.io.IOException;
 import java.sql.*;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * Builds CitySimulations from database input files.
+ */
 public class ScenarioBuilder {
 
     private final static Logger LOGGER = LogManager.getLogger(ScenarioBuilder.class.getName());
@@ -24,6 +28,9 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_PAR_INITIAL_DATETIME = "initialDateTime";
     public final static String SQL_COLUMNS_PAR_TIME_STEP_SIZE = "timeStepSize_in_min";
     public final static String SQL_COLUMNS_PAR_NUMBER_TIME_STEPS = "numberTimeSteps";
+    public final static String SQL_COLUMNS_PAR_LOG_THERMAL_POWER = "logThermalPower";
+    public final static String SQL_COLUMNS_PAR_LOG_TEMPERATURE = "logTemperature";
+    public final static String SQL_COLUMNS_PAR_LOG_ACTIVITY = "logActivity";
     public final static String SQL_COLUMNS_PAR_SET_POINT_WHILE_HOME = "setPointWhileHome";
     public final static String SQL_COLUMNS_PAR_SET_POINT_WHILE_ASLEEP = "setPointWhileAsleep";
     public final static String SQL_COLUMNS_PAR_WAKE_UP_TIME = "wakeUpTime";
@@ -33,11 +40,19 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_ENV_INDEX = "index";
     public final static String SQL_COLUMNS_ENV_TEMPERATURE = "temperature";
     public final static String SQL_COLUMNS_DW_INDEX = "index";
-    public final static String SQL_COLUMNS_DW_HEAT_MASS_CAPACITY = "heatMassCapacity";
-    public final static String SQL_COLUMNS_DW_HEAT_TRANSMISSION = "heatTransmission";
+    public final static String SQL_COLUMNS_DW_THERMAL_MASS_CAPACITY = "thermalMassCapacity";
+    public final static String SQL_COLUMNS_DW_THERMAL_MASS_AREA = "thermalMassArea";
+    public final static String SQL_COLUMNS_DW_FLOOR_AREA = "floorArea";
+    public final static String SQL_COLUMNS_DW_ROOM_HEIGHT = "roomHeight";
+    public final static String SQL_COLUMNS_DW_WINDOW_TO_WALL_RATIO = "windowToWallRatio";
+    public final static String SQL_COLUMNS_DW_U_VALUE_WALL = "uWall";
+    public final static String SQL_COLUMNS_DW_U_VALUE_ROOF = "uRoof";
+    public final static String SQL_COLUMNS_DW_U_VALUE_FLOOR = "uFloor";
+    public final static String SQL_COLUMNS_DW_U_VALUE_WINDOW = "uWindow";
+    public final static String SQL_COLUMNS_DW_TR_ADJ_GROUND = "transmissionAdjustmentGround";
+    public final static String SQL_COLUMNS_DW_NATURAL_VENTILATION_RATE = "naturalVentilationRate";
     public final static String SQL_COLUMNS_DW_INITIAL_TEMPERATURE = "initialTemperature";
     public final static String SQL_COLUMNS_DW_MAX_HEATING_POWER = "maxHeatingPower";
-    public final static String SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA = "conditionedFloorArea";
     public final static String SQL_COLUMNS_DW_HEATING_CONTROL_STRATEGY = "heatingControlStrategy";
     public final static String SQL_COLUMNS_PPL_DWELLING_ID = "dwellingId";
     public final static String SQL_COLUMNS_PPL_MARKOV_ID = "markovChainId";
@@ -65,14 +80,28 @@ public class ScenarioBuilder {
         private final ZonedDateTime initialTime;
         private final Duration timeStepSize;
         private final int numberTimeSteps;
+        private final boolean logThermalPower;
+        private final boolean logTemperature;
+        private final boolean logActivity;
 
-        private SimulationParameter(ZonedDateTime initialTime, Duration timeStepSize, int numberTimeSteps) {
+        private SimulationParameter(ZonedDateTime initialTime, Duration timeStepSize, int numberTimeSteps,
+                                    boolean logThermalPower, boolean logTemperature, boolean logActivity) {
             this.initialTime = initialTime;
             this.timeStepSize = timeStepSize;
             this.numberTimeSteps = numberTimeSteps;
+            this.logThermalPower = logThermalPower;
+            this.logTemperature = logTemperature;
+            this.logActivity = logActivity;
         }
     }
 
+    /**
+     * Reads a CitySimulation Scenario from database.
+     * @param databasePath the path to the input database.
+     * @param outputPath the path to the database to which results shall be written
+     * @return a CitySimulation
+     * @throws IOException whenever reading from input database fails
+     */
     public static CitySimulation readScenario(String databasePath, String outputPath) throws IOException {
         CitySimulation simulation = null;
         Connection conn = null;
@@ -80,7 +109,7 @@ public class ScenarioBuilder {
             Class.forName("org.sqlite.JDBC");
             conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", databasePath));
             simulation = readScenario(conn, databasePath, outputPath);
-        } catch (ClassNotFoundException|SQLException ex) {
+        } catch (ClassNotFoundException|SQLException|IOException ex) {
             LOGGER.error(String.format("Failed to read scenario from %s.", databasePath), ex);
             throw new IOException("Failed to read scenario");
         } finally {
@@ -96,14 +125,15 @@ public class ScenarioBuilder {
     }
 
     private static CitySimulation readScenario(Connection con, String inputPath, String outputPath)
-            throws SQLException {
+            throws SQLException, IOException {
         SimulationParameter parameters = readSimulationParameters(con);
         HeatingControlStrategyFactory heatingControlStrategyFactory = readHeatingControlStrategyFactory(con);
         EnvironmentReference environmentReference = readEnvironment(con, parameters.timeStepSize);
         Map<Integer, DwellingReference> dwellingReferences = readDwellings(con, parameters, environmentReference,
                 heatingControlStrategyFactory);
         Map<Integer, PersonReference> peopleReferences = readPeople(con, dwellingReferences, parameters);
-        DataLoggerReference dataLoggerReference = createDataLogger(dwellingReferences, peopleReferences, inputPath, outputPath);
+        DataLoggerReference dataLoggerReference = createDataLogger(dwellingReferences, peopleReferences, parameters,
+                inputPath, outputPath);
         return new CitySimulation(
                 dwellingReferences.values(),
                 peopleReferences.values(),
@@ -121,8 +151,12 @@ public class ScenarioBuilder {
                 .atZone(TIME_ZONE);
     }
 
-    private static LocalTime readLocalTime(ResultSet rs, String columnName) throws SQLException {
-        return LocalTime.parse(rs.getString(columnName), DateTimeFormatter.ISO_LOCAL_TIME);
+    private static LocalTime readLocalTime(ResultSet rs, String columnName) throws SQLException, IOException {
+        try {
+            return LocalTime.parse(rs.getString(columnName), DateTimeFormatter.ISO_LOCAL_TIME);
+        } catch (DateTimeParseException e) {
+            throw new IOException(e);
+        }
     }
 
     private static HeatingControlStrategyFactory.ControlStrategyType readControlStrategyType(ResultSet rs, String columnName) throws SQLException {
@@ -154,17 +188,25 @@ public class ScenarioBuilder {
             dwellings.put(
                     rs.getInt(SQL_COLUMNS_DW_INDEX),
                     new DwellingReference(new Dwelling(
-                        rs.getDouble(SQL_COLUMNS_DW_HEAT_MASS_CAPACITY),
-                        rs.getDouble(SQL_COLUMNS_DW_HEAT_TRANSMISSION),
-                        rs.getDouble(SQL_COLUMNS_DW_MAX_HEATING_POWER),
-                        rs.getDouble(SQL_COLUMNS_DW_INITIAL_TEMPERATURE),
-                        rs.getDouble(SQL_COLUMNS_DW_CONDITIONED_FLOOR_AREA),
-                        parameters.initialTime,
-                        parameters.timeStepSize,
-                        new HeatingControlStrategyReference(controlStrategyFactory.build(
+                            rs.getDouble(SQL_COLUMNS_DW_THERMAL_MASS_CAPACITY),
+                            rs.getDouble(SQL_COLUMNS_DW_THERMAL_MASS_AREA),
+                            rs.getDouble(SQL_COLUMNS_DW_FLOOR_AREA),
+                            rs.getDouble(SQL_COLUMNS_DW_ROOM_HEIGHT),
+                            rs.getDouble(SQL_COLUMNS_DW_WINDOW_TO_WALL_RATIO),
+                            rs.getDouble(SQL_COLUMNS_DW_U_VALUE_WALL),
+                            rs.getDouble(SQL_COLUMNS_DW_U_VALUE_ROOF),
+                            rs.getDouble(SQL_COLUMNS_DW_U_VALUE_FLOOR),
+                            rs.getDouble(SQL_COLUMNS_DW_U_VALUE_WINDOW),
+                            rs.getDouble(SQL_COLUMNS_DW_TR_ADJ_GROUND),
+                            rs.getDouble(SQL_COLUMNS_DW_NATURAL_VENTILATION_RATE),
+                            rs.getDouble(SQL_COLUMNS_DW_MAX_HEATING_POWER),
+                            rs.getDouble(SQL_COLUMNS_DW_INITIAL_TEMPERATURE),
+                            parameters.initialTime,
+                            parameters.timeStepSize,
+                            new HeatingControlStrategyReference(controlStrategyFactory.build(
                                 readControlStrategyType(rs, SQL_COLUMNS_DW_HEATING_CONTROL_STRATEGY))
-                        ),
-                        env
+                            ),
+                            env
                     ))
             );
         }
@@ -173,7 +215,7 @@ public class ScenarioBuilder {
     }
 
     private static Map<Integer, PersonReference> readPeople(Connection conn, Map<Integer, DwellingReference> dwellings,
-                                                    SimulationParameter parameters) throws SQLException {
+                                                    SimulationParameter parameters) throws SQLException, IOException {
         Map<Integer, HeterogeneousMarkovChain<Person.Activity>> markovChains = readMarkovChains(conn, parameters);
         Map<Integer, Person> people = new HashMap<>();
         Statement stat = conn.createStatement();
@@ -211,7 +253,7 @@ public class ScenarioBuilder {
 
     private static Map<Integer, HeterogeneousMarkovChain<Person.Activity>> readMarkovChains(Connection conn,
                                                                                             SimulationParameter parameters)
-            throws SQLException {
+            throws SQLException, IOException {
         Map<Integer, String> markovChainTableNames = new HashMap<>();
         Statement stat = conn.createStatement();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", SQL_TABLES_MARKOV_CHAINS));
@@ -233,7 +275,8 @@ public class ScenarioBuilder {
     }
 
     private static HeterogeneousMarkovChain<Person.Activity> readMarkovChain(Connection conn, String tablename,
-                                                                             SimulationParameter parameters) throws SQLException {
+                                                                             SimulationParameter parameters)
+            throws SQLException, IOException {
         List<MarkovChainReader.MarkovChainEntry> entries = new ArrayList<>();
         Statement stat = conn.createStatement();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", tablename));
@@ -259,7 +302,10 @@ public class ScenarioBuilder {
             parameters.add(new SimulationParameter(
                     readTimeStamp(rs, SQL_COLUMNS_PAR_INITIAL_DATETIME),
                     Duration.ofMinutes(rs.getInt(SQL_COLUMNS_PAR_TIME_STEP_SIZE)),
-                    rs.getInt(SQL_COLUMNS_PAR_NUMBER_TIME_STEPS)
+                    rs.getInt(SQL_COLUMNS_PAR_NUMBER_TIME_STEPS),
+                    rs.getBoolean(SQL_COLUMNS_PAR_LOG_THERMAL_POWER),
+                    rs.getBoolean(SQL_COLUMNS_PAR_LOG_TEMPERATURE),
+                    rs.getBoolean(SQL_COLUMNS_PAR_LOG_ACTIVITY)
             ));
         }
         rs.close();
@@ -270,7 +316,8 @@ public class ScenarioBuilder {
         return parameters.get(0); // there could be more, but at the moment don't care
     }
 
-    private static HeatingControlStrategyFactory readHeatingControlStrategyFactory(Connection conn) throws SQLException {
+    private static HeatingControlStrategyFactory readHeatingControlStrategyFactory(Connection conn)
+            throws SQLException, IOException {
         List<HeatingControlStrategyFactory> factories = new ArrayList<>();
         Statement stat = conn.createStatement();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", SQL_TABLES_PARAMETERS));
@@ -295,23 +342,30 @@ public class ScenarioBuilder {
 
     private static DataLoggerReference createDataLogger(Map<Integer, DwellingReference> dwellings,
                                                         Map<Integer, PersonReference> people,
+                                                        SimulationParameter parameters,
                                                         String inputPath, String outputPath) {
         Set<DataPoint> dataPoints = new HashSet<>();
-        dataPoints.add(new DataPoint<>(
-                TEMPERATURE_DATA_POINT_NAME,
-                dwellings,
-                (DwellingReference::getCurrentTemperature)
-        ));
-        dataPoints.add(new DataPoint<>(
-                THERMAL_POWER_DATA_POINT_NAME,
-                dwellings,
-                (DwellingReference::getCurrentThermalPower)
-        ));
-        dataPoints.add(new DataPoint<>(
-                ACTIVITY_DATA_POINT_NAME,
-                people,
-                (PersonReference::getCurrentActivity)
-        ));
+        if (parameters.logTemperature) {
+            dataPoints.add(new DataPoint<>(
+                    TEMPERATURE_DATA_POINT_NAME,
+                    dwellings,
+                    (DwellingReference::getCurrentAirTemperature)
+            ));
+        }
+        if (parameters.logThermalPower) {
+            dataPoints.add(new DataPoint<>(
+                    THERMAL_POWER_DATA_POINT_NAME,
+                    dwellings,
+                    (DwellingReference::getCurrentThermalPower)
+            ));
+        }
+        if (parameters.logActivity) {
+            dataPoints.add(new DataPoint<>(
+                    ACTIVITY_DATA_POINT_NAME,
+                    people,
+                    (PersonReference::getCurrentActivity)
+            ));
+        }
         DataLogger dataLogger = new DataLogger(
                 dataPoints.stream().map(DataPointReference::new).collect(Collectors.toSet()),
                 inputPath,

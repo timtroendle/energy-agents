@@ -34,16 +34,11 @@ public class TestDwellingWithBrokenHVAC {
         when(this.controlStrategy.heatingSetPoint(any(), any()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(20.0)));
         when(this.environment.getCurrentTemperature()).thenReturn(INITIAL_DWELLING_TEMPERATURE);
-        double conditionedFloorArea = 100;
-        this.dwelling = new Dwelling(
-                165000 * conditionedFloorArea,
-                200,
-                MAX_HEATING_POWER,
-                INITIAL_DWELLING_TEMPERATURE,
-                conditionedFloorArea,
-                INITIAL_TIME,
-                TIME_STEP_SIZE,
-                this.controlStrategy,
+        double floorArea = 100;
+        this.dwelling = new Dwelling(165000 * floorArea, 2.5 * floorArea, floorArea,
+                3, 0.19, 0.26, 0.12, 0.40, 1.95,
+                0.91, 0.65, MAX_HEATING_POWER,
+                INITIAL_DWELLING_TEMPERATURE, INITIAL_TIME, TIME_STEP_SIZE, this.controlStrategy,
                 new EnvironmentReference(this.environment));
     }
 
@@ -56,14 +51,14 @@ public class TestDwellingWithBrokenHVAC {
     @Test
     public void dwellingStaysColdWhenSameTempOutside() throws ExecutionException, InterruptedException {
         this.dwelling.step().get();
-        assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
+        assertThat(this.dwelling.getCurrentAirTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }
 
     @Test
     public void dwellingGetsColderWhenColderOutside() throws ExecutionException, InterruptedException {
         when(this.environment.getCurrentTemperature()).thenReturn(INITIAL_DWELLING_TEMPERATURE - 5);
         this.dwelling.step().get();
-        assertThat(this.dwelling.getCurrentTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
+        assertThat(this.dwelling.getCurrentAirTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
     @Test
@@ -77,7 +72,7 @@ public class TestDwellingWithBrokenHVAC {
     public void dwellingGetsWarmerWhenWarmerOutside() throws ExecutionException, InterruptedException {
         when(this.environment.getCurrentTemperature()).thenReturn(INITIAL_DWELLING_TEMPERATURE + 5);
         this.dwelling.step().get();
-        assertThat(this.dwelling.getCurrentTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
+        assertThat(this.dwelling.getCurrentAirTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
     @Test
@@ -92,7 +87,7 @@ public class TestDwellingWithBrokenHVAC {
         when(this.person.getCurrentMetabolicRate()).thenReturn(50.0);
         this.dwelling.enter(new PersonReference(this.person));
         this.dwelling.step().get();
-        assertThat(this.dwelling.getCurrentTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
+        assertThat(this.dwelling.getCurrentAirTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
     @Test
@@ -100,6 +95,6 @@ public class TestDwellingWithBrokenHVAC {
         when(this.person.getCurrentMetabolicRate()).thenReturn(0.0);
         this.dwelling.enter(new PersonReference(this.person));
         this.dwelling.step().get();
-        assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
+        assertThat(this.dwelling.getCurrentAirTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }
 }

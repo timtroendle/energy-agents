@@ -102,7 +102,8 @@ public class CitySimulation implements ISimulation {
                 logger.info("Attempting to write results to disk.");
                 this.dataLoggerReference.write(this.collectMetadata()).get();
             } catch (InterruptedException|ExecutionException e) {
-                e.printStackTrace(); // FIXME proper error handling
+                logger.error("Failed to write results.");
+                e.printStackTrace();
             }
         }
     }

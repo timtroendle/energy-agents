@@ -45,11 +45,11 @@ public class TestDwelling {
                 .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE));
         when(this.person.getCurrentMetabolicRate())
                 .thenReturn(CompletableFuture.completedFuture(2.0));
-        double conditionedFloorArea = 100;
-        this.dwelling = new Dwelling(165000 * conditionedFloorArea, 200,
-                                     Double.POSITIVE_INFINITY, INITIAL_DWELLING_TEMPERATURE,
-                                     conditionedFloorArea, INITIAL_TIME, TIME_STEP_SIZE, this.controlStrategy,
-                                     this.environment);
+        double floorArea = 100;
+        this.dwelling = new Dwelling(165000 * floorArea, 2.5 * floorArea, floorArea,
+                3, 0.19, 0.26, 0.12, 0.40, 1.95,
+                0.91, 0.65, Double.POSITIVE_INFINITY,
+                INITIAL_DWELLING_TEMPERATURE, INITIAL_TIME, TIME_STEP_SIZE, this.controlStrategy, this.environment);
         this.dwellingReference = new DwellingReference(this.dwelling);
     }
 
@@ -83,7 +83,7 @@ public class TestDwelling {
     @Test
     public void testDwellingTemperatureRemainsConstantWithSameTemperature() {
         this.dwelling.step();
-        assertThat(this.dwelling.getCurrentTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
+        assertThat(this.dwelling.getCurrentAirTemperature(), is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }
 
     @Test
@@ -91,7 +91,7 @@ public class TestDwelling {
         when(this.environment.getCurrentTemperature())
                 .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE + 1));
         this.dwelling.step();
-        assertThat(this.dwelling.getCurrentTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
+        assertThat(this.dwelling.getCurrentAirTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
     @Test
@@ -99,7 +99,7 @@ public class TestDwelling {
         when(this.environment.getCurrentTemperature())
                 .thenReturn(CompletableFuture.completedFuture(INITIAL_DWELLING_TEMPERATURE - 1));
         this.dwelling.step();
-        assertThat(this.dwelling.getCurrentTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
+        assertThat(this.dwelling.getCurrentAirTemperature(), is(lessThan(INITIAL_DWELLING_TEMPERATURE)));
     }
 
     @Test
@@ -115,8 +115,8 @@ public class TestDwelling {
         when(this.controlStrategy.heatingSetPoint(eq(INITIAL_TIME), any()))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(23.0)));
         this.dwelling.step();
-        assertThat(this.dwelling.getCurrentTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
-        assertThat(this.dwelling.getCurrentTemperature(), is(lessThanOrEqualTo(23.0)));
+        assertThat(this.dwelling.getCurrentAirTemperature(), is(greaterThan(INITIAL_DWELLING_TEMPERATURE)));
+        assertThat(this.dwelling.getCurrentAirTemperature(), is(lessThanOrEqualTo(23.0)));
         assertThat(this.dwelling.getCurrentThermalPower(), is(greaterThan(0.0)));
     }
 
@@ -143,7 +143,7 @@ public class TestDwelling {
     @Test
     public void canAccessTemperatureThroughReference() throws ExecutionException, InterruptedException {
         Reference.pool.setCurrentExecutor(Reference.pool.main);
-        double temp = this.dwellingReference.getCurrentTemperature().get();
+        double temp = this.dwellingReference.getCurrentAirTemperature().get();
         assertThat(temp, is(closeTo(INITIAL_DWELLING_TEMPERATURE, EPSILON)));
     }
 
