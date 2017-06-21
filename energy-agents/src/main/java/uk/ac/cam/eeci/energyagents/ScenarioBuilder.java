@@ -31,6 +31,7 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_PAR_LOG_THERMAL_POWER = "logThermalPower";
     public final static String SQL_COLUMNS_PAR_LOG_TEMPERATURE = "logTemperature";
     public final static String SQL_COLUMNS_PAR_LOG_ACTIVITY = "logActivity";
+    public final static String SQL_COLUMNS_PAR_LOG_AGGREGATED = "logAggregated";
     public final static String SQL_COLUMNS_PAR_SET_POINT_WHILE_HOME = "setPointWhileHome";
     public final static String SQL_COLUMNS_PAR_SET_POINT_WHILE_ASLEEP = "setPointWhileAsleep";
     public final static String SQL_COLUMNS_PAR_WAKE_UP_TIME = "wakeUpTime";
@@ -40,6 +41,7 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_ENV_INDEX = "index";
     public final static String SQL_COLUMNS_ENV_TEMPERATURE = "temperature";
     public final static String SQL_COLUMNS_DW_INDEX = "index";
+    public final static String SQL_COLUMNS_DW_DISTRICT_ID = "districtId";
     public final static String SQL_COLUMNS_DW_THERMAL_MASS_CAPACITY = "thermalMassCapacity";
     public final static String SQL_COLUMNS_DW_THERMAL_MASS_AREA = "thermalMassArea";
     public final static String SQL_COLUMNS_DW_FLOOR_AREA = "floorArea";
@@ -70,8 +72,10 @@ public class ScenarioBuilder {
     public final static String SQL_COLUMNS_MARKOV_PROBABILITY = "probability";
 
     public final static String TEMPERATURE_DATA_POINT_NAME = "temperature";
+    public final static String AVERAGE_TEMPERATURE_DATA_POINT_NAME = "averageTemperature";
     public final static String ACTIVITY_DATA_POINT_NAME = "activity";
     public final static String THERMAL_POWER_DATA_POINT_NAME = "thermalPower";
+    public final static String AVERAGE_THERMAL_POWER_DATA_POINT_NAME = "averageThermalPower";
 
     public final static ZoneOffset TIME_ZONE = ZoneOffset.UTC;
 
@@ -83,15 +87,18 @@ public class ScenarioBuilder {
         private final boolean logThermalPower;
         private final boolean logTemperature;
         private final boolean logActivity;
+        private final boolean logAggregated;
 
         private SimulationParameter(ZonedDateTime initialTime, Duration timeStepSize, int numberTimeSteps,
-                                    boolean logThermalPower, boolean logTemperature, boolean logActivity) {
+                                    boolean logThermalPower, boolean logTemperature, boolean logActivity,
+                                    boolean logAggregated) {
             this.initialTime = initialTime;
             this.timeStepSize = timeStepSize;
             this.numberTimeSteps = numberTimeSteps;
             this.logThermalPower = logThermalPower;
             this.logTemperature = logTemperature;
             this.logActivity = logActivity;
+            this.logAggregated = logAggregated;
         }
     }
 
@@ -131,9 +138,10 @@ public class ScenarioBuilder {
         EnvironmentReference environmentReference = readEnvironment(con, parameters.timeStepSize);
         Map<Integer, DwellingReference> dwellingReferences = readDwellings(con, parameters, environmentReference,
                 heatingControlStrategyFactory);
+        Map<Integer, DwellingDistrictReference> districtReferences = readDistricts(con, dwellingReferences);
         Map<Integer, PersonReference> peopleReferences = readPeople(con, dwellingReferences, parameters);
-        DataLoggerReference dataLoggerReference = createDataLogger(dwellingReferences, peopleReferences, parameters,
-                inputPath, outputPath);
+        DataLoggerReference dataLoggerReference = createDataLogger(dwellingReferences, peopleReferences,
+                districtReferences, parameters, inputPath, outputPath);
         return new CitySimulation(
                 dwellingReferences.values(),
                 peopleReferences.values(),
@@ -212,6 +220,33 @@ public class ScenarioBuilder {
         }
         rs.close();
         return dwellings;
+    }
+
+    private static Map<Integer, DwellingDistrictReference> readDistricts(Connection conn,
+                                                                         Map<Integer, DwellingReference> dwellings)
+            throws SQLException {
+        Map<Integer, List<Integer>> districtsToDwellingId = new HashMap<>();
+        Statement stat = conn.createStatement();
+        ResultSet rs = stat.executeQuery(String.format("select * from %s;", SQL_TABLES_DWELLINGS));
+        while (rs.next()) {
+            int dwellingId = rs.getInt(SQL_COLUMNS_DW_INDEX);
+            int districtId = rs.getInt(SQL_COLUMNS_DW_DISTRICT_ID);
+            if(!districtsToDwellingId.keySet().contains(districtId)){
+                districtsToDwellingId.put(districtId, new LinkedList<>());
+            }
+            districtsToDwellingId.get(districtId).add(dwellingId);
+        }
+        rs.close();
+
+        Map<Integer, DwellingDistrictReference> districts = new HashMap<>();
+        for(Map.Entry<Integer, List<Integer>> entry : districtsToDwellingId.entrySet()){
+            List<DwellingReference> dwellingsInDistrict = new LinkedList<>();
+            for(Integer i : entry.getValue()){
+                dwellingsInDistrict.add(dwellings.get(i));
+            }
+            districts.put(entry.getKey(), new DwellingDistrictReference(new DwellingDistrict(new HashSet<>(dwellingsInDistrict))));
+        }
+        return districts;
     }
 
     private static Map<Integer, PersonReference> readPeople(Connection conn, Map<Integer, DwellingReference> dwellings,
@@ -305,7 +340,8 @@ public class ScenarioBuilder {
                     rs.getInt(SQL_COLUMNS_PAR_NUMBER_TIME_STEPS),
                     rs.getBoolean(SQL_COLUMNS_PAR_LOG_THERMAL_POWER),
                     rs.getBoolean(SQL_COLUMNS_PAR_LOG_TEMPERATURE),
-                    rs.getBoolean(SQL_COLUMNS_PAR_LOG_ACTIVITY)
+                    rs.getBoolean(SQL_COLUMNS_PAR_LOG_ACTIVITY),
+                    rs.getBoolean(SQL_COLUMNS_PAR_LOG_AGGREGATED)
             ));
         }
         rs.close();
@@ -342,22 +378,43 @@ public class ScenarioBuilder {
 
     private static DataLoggerReference createDataLogger(Map<Integer, DwellingReference> dwellings,
                                                         Map<Integer, PersonReference> people,
+                                                        Map<Integer, DwellingDistrictReference> districts,
                                                         SimulationParameter parameters,
                                                         String inputPath, String outputPath) {
         Set<DataPoint> dataPoints = new HashSet<>();
         if (parameters.logTemperature) {
-            dataPoints.add(new DataPoint<>(
-                    TEMPERATURE_DATA_POINT_NAME,
-                    dwellings,
-                    (DwellingReference::getCurrentAirTemperature)
-            ));
+            if (parameters.logAggregated) {
+                dataPoints.add(new DataPoint<>(
+                        AVERAGE_TEMPERATURE_DATA_POINT_NAME,
+                        districts,
+                        (district -> district.getAllCurrentAirTemperatures()
+                                .thenApply(Map::values)
+                                .thenApply(values -> values.stream().mapToDouble(Double::doubleValue).average().getAsDouble()))
+                ));
+            } else {
+                dataPoints.add(new DataPoint<>(
+                        TEMPERATURE_DATA_POINT_NAME,
+                        dwellings,
+                        (DwellingReference::getCurrentAirTemperature)
+                ));
+            }
         }
         if (parameters.logThermalPower) {
-            dataPoints.add(new DataPoint<>(
-                    THERMAL_POWER_DATA_POINT_NAME,
-                    dwellings,
-                    (DwellingReference::getCurrentThermalPower)
-            ));
+            if (parameters.logAggregated) {
+                dataPoints.add(new DataPoint<>(
+                        AVERAGE_THERMAL_POWER_DATA_POINT_NAME,
+                        districts,
+                        (district -> district.getAllCurrentThermalPowers()
+                                .thenApply(Map::values)
+                                .thenApply(values -> values.stream().mapToDouble(Double::doubleValue).average().getAsDouble()))
+                ));
+            } else {
+                dataPoints.add(new DataPoint<>(
+                        THERMAL_POWER_DATA_POINT_NAME,
+                        dwellings,
+                        (DwellingReference::getCurrentThermalPower)
+                ));
+            }
         }
         if (parameters.logActivity) {
             dataPoints.add(new DataPoint<>(

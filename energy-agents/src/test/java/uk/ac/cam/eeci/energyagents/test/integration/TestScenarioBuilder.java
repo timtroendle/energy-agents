@@ -15,6 +15,10 @@ import uk.ac.cam.eeci.energyagents.test.utils.Utils;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.sql.*;
 import java.time.Duration;
 import java.time.Instant;
@@ -32,9 +36,11 @@ public class TestScenarioBuilder {
     // constants from the input file
     private final static String INPUT_PATH = "test-scenario.db";
     private final static int NUMBER_DWELLINGS = 100;
+    private final static int NUMBER_DISTRICTS = 10;
     private final static int NUMBER_PEOPLE = 200;
     private final static int NUMBER_TIME_STEPS = 90;
     private final static List<Integer> DWELLING_INDICES;
+    private final static List<Integer> DISTRICT_INDICES;
     private final static List<Integer> PEOPLE_INDICES;
     private final static ZonedDateTime INITIAL_DATE_TIME = ZonedDateTime.of(2015, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC);
     private final static Duration TIME_STEPS_SIZE = Duration.ofHours(12);
@@ -42,9 +48,13 @@ public class TestScenarioBuilder {
 
     static {
         DWELLING_INDICES = new ArrayList<>();
+        DISTRICT_INDICES = new ArrayList<>();
         PEOPLE_INDICES = new ArrayList<>();
         for (int i = 0; i < NUMBER_DWELLINGS; i++) {
             DWELLING_INDICES.add(104 + i);
+        }
+        for (int i = 0; i < NUMBER_DISTRICTS; i++) {
+            DISTRICT_INDICES.add(i);
         }
         for (int i = 1; i < NUMBER_PEOPLE * 2; i += 2) {
             PEOPLE_INDICES.add(i);
@@ -58,16 +68,19 @@ public class TestScenarioBuilder {
         }
     }
 
+    private File tempInputFile;
     private File tempOutPutFile;
-    private URL inputURL;
     private CitySimulation citySimulation;
 
     @Before
     public void setUp() throws IOException {
         Utils.resetScienceOS();
+        this.tempInputFile = File.createTempFile("energy-agents-test-scenario-input", ".db");
         this.tempOutPutFile = File.createTempFile("energy-agents-test-scenario", ".db");
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-        this.inputURL = classloader.getResource(INPUT_PATH);
+        Path src = FileSystems.getDefault().getPath(classloader.getResource(INPUT_PATH).getPath());
+        Path dest = this.tempInputFile.toPath();
+        Files.copy(src, dest, StandardCopyOption.REPLACE_EXISTING);
     }
 
     @After
@@ -75,14 +88,25 @@ public class TestScenarioBuilder {
         this.tempOutPutFile.deleteOnExit();
     }
 
+    private void demandAggregatedResults() throws IOException, ClassNotFoundException, SQLException {
+        Class.forName("org.sqlite.JDBC");
+        Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", this.tempInputFile.getCanonicalPath()));
+        Statement stat = conn.createStatement();
+
+        stat.executeUpdate(String.format("update %s set %s = 1;", ScenarioBuilder.SQL_TABLES_PARAMETERS,
+                ScenarioBuilder.SQL_COLUMNS_PAR_LOG_AGGREGATED));
+        conn.close();
+    }
+
+
     @Test(expected = IOException.class)
     public void throwsIOExceptionWhenInputFileDoesNotExist() throws IOException {
-        ScenarioBuilder.readScenario(this.inputURL.getPath() + "invalid", this.tempOutPutFile.getCanonicalPath());
+        ScenarioBuilder.readScenario(this.tempInputFile.getPath() + "invalid", this.tempOutPutFile.getCanonicalPath());
     }
 
     @Test
     public void resultContainsValidTemperatureRecord() throws ClassNotFoundException, SQLException, IOException {
-        this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), this.tempOutPutFile.getCanonicalPath());
+        this.citySimulation = ScenarioBuilder.readScenario(this.tempInputFile.getPath(), this.tempOutPutFile.getCanonicalPath());
         new Conductor(this.citySimulation).run();
 
         Map<Integer, TimeSeries<Double>> temperatureTimeSeries = readTemperatureRecordFromDB();
@@ -99,7 +123,7 @@ public class TestScenarioBuilder {
     @Test
     public void resultDoesNotContainThermalPowerRecord() throws ClassNotFoundException, SQLException, IOException {
         String outputPath = this.tempOutPutFile.getCanonicalPath();
-        this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), this.tempOutPutFile.getCanonicalPath());
+        this.citySimulation = ScenarioBuilder.readScenario(this.tempInputFile.getPath(), this.tempOutPutFile.getCanonicalPath());
         new Conductor(this.citySimulation).run();
 
         List<String> tableNames = getTableNames(outputPath);
@@ -112,7 +136,7 @@ public class TestScenarioBuilder {
 
     @Test
     public void resultContainsValidActivityRecord() throws ClassNotFoundException, SQLException, IOException {
-        this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), this.tempOutPutFile.getCanonicalPath());
+        this.citySimulation = ScenarioBuilder.readScenario(this.tempInputFile.getPath(), this.tempOutPutFile.getCanonicalPath());
         new Conductor(this.citySimulation).run();
 
         Map<Integer, TimeSeries<String>> activityTimeSeries = readActivityRecordFromDB();
@@ -129,7 +153,7 @@ public class TestScenarioBuilder {
     @Test
     public void resultContainsInput() throws SQLException, IOException {
         String outputPath = this.tempOutPutFile.getCanonicalPath();
-        this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), outputPath);
+        this.citySimulation = ScenarioBuilder.readScenario(this.tempInputFile.getPath(), outputPath);
         new Conductor(this.citySimulation).run();
 
         List<String> tableNames = getTableNames(outputPath);
@@ -146,7 +170,7 @@ public class TestScenarioBuilder {
     public void resultsAreReproducible() throws IOException, SQLException, ClassNotFoundException {
         // run once
         String outputPath = this.tempOutPutFile.getCanonicalPath();
-        this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), outputPath);
+        this.citySimulation = ScenarioBuilder.readScenario(this.tempInputFile.getPath(), outputPath);
         new Conductor(this.citySimulation).run();
 
         Map<Integer, TimeSeries<String>> activityTimeSeries1 = readActivityRecordFromDB();
@@ -154,7 +178,7 @@ public class TestScenarioBuilder {
 
         // ... and run again
         Utils.resetScienceOS();
-        this.citySimulation = ScenarioBuilder.readScenario(this.inputURL.getPath(), outputPath);
+        this.citySimulation = ScenarioBuilder.readScenario(this.tempInputFile.getPath(), outputPath);
         new Conductor(this.citySimulation).run();
 
         Map<Integer, TimeSeries<String>> activityTimeSeries2 = readActivityRecordFromDB();
@@ -164,10 +188,27 @@ public class TestScenarioBuilder {
         assertThat(temperatureTimeSeries1, is(equalTo(temperatureTimeSeries2)));
     }
 
+    @Test
+    public void temperatureAverageExistsWhenAggregatedResultsDemanded() throws IOException, SQLException, ClassNotFoundException {
+        this.demandAggregatedResults();
+        this.citySimulation = ScenarioBuilder.readScenario(this.tempInputFile.getPath(), this.tempOutPutFile.getCanonicalPath());
+        new Conductor(this.citySimulation).run();
+
+        Map<Integer, TimeSeries<Double>> averageTimeSeries = readAverageTemperatureRecordFromDB();
+
+        assertThat(averageTimeSeries.size(), is(equalTo(NUMBER_DISTRICTS)));
+        for (TimeSeries<Double> timeSeries : averageTimeSeries.values()) {
+            assertThat(timeSeries.getIndex(), Matchers.contains(TIME_INDEX));
+        }
+        List<Integer> sortedIndexSet = new ArrayList<>(averageTimeSeries.keySet());
+        Collections.sort(sortedIndexSet);
+        assertThat(sortedIndexSet, is(equalTo(DISTRICT_INDICES)));
+    }
+
     private List<String> getTableNames(String outputPath) throws SQLException {
         List<String> tableNames = new ArrayList<>();
         try (Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", outputPath))) {
-            try (Statement stat = conn.createStatement()){
+            try (Statement stat = conn.createStatement()) {
                 try (ResultSet rs = stat.executeQuery("SELECT name FROM sqlite_master WHERE type='table';")) {
                     while (rs.next()) {
                         tableNames.add(rs.getString(1));
@@ -187,6 +228,41 @@ public class TestScenarioBuilder {
 
         List<Triplet<Integer, ZonedDateTime, Double>> entries = new ArrayList<>();
         ResultSet rs = stat.executeQuery(String.format("select * from %s;", ScenarioBuilder.TEMPERATURE_DATA_POINT_NAME));
+        while (rs.next()) {
+            entries.add(new Triplet<>(
+                    rs.getInt(2),
+                    Instant.ofEpochMilli(rs.getLong(1)).atZone(ZoneOffset.UTC),
+                    rs.getDouble(3)
+            ));
+        }
+        rs.close();
+        conn.close();
+
+        Map<Integer, TimeSeries<Double>> timeSeries = new HashMap<>();
+        List<Integer> indices = entries.stream().map(Triplet::getValue0).collect(Collectors.toList());
+        for (Integer index : indices) {
+            TimeSeries<Double> indexTimeSeries = new TimeSeries<>();
+            timeSeries.put(index, indexTimeSeries);
+            List<Pair<ZonedDateTime, Double>> timeSeriesEntries = entries.stream()
+                    .filter(entry -> entry.getValue0().equals(index))
+                    .map(entry -> new Pair<>(entry.getValue1(), entry.getValue2()))
+                    .collect(Collectors.toList());
+            for (Pair<ZonedDateTime, Double> timeSeriesEntry : timeSeriesEntries) {
+                indexTimeSeries.add(timeSeriesEntry.getValue0(), timeSeriesEntry.getValue1());
+            }
+        }
+        return timeSeries;
+    }
+
+    private Map<Integer, TimeSeries<Double>> readAverageTemperatureRecordFromDB()
+            throws IOException, SQLException, ClassNotFoundException {
+
+        Class.forName("org.sqlite.JDBC");
+        Connection conn = DriverManager.getConnection(String.format("jdbc:sqlite:%s", this.tempOutPutFile.getCanonicalPath()));
+        Statement stat = conn.createStatement();
+
+        List<Triplet<Integer, ZonedDateTime, Double>> entries = new ArrayList<>();
+        ResultSet rs = stat.executeQuery(String.format("select * from %s;", ScenarioBuilder.AVERAGE_TEMPERATURE_DATA_POINT_NAME));
         while (rs.next()) {
             entries.add(new Triplet<>(
                     rs.getInt(2),
